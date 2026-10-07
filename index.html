@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Functional Mobility Test Station</title>
+<meta name="apple-mobile-web-app-title" content="Mobility Tests">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0E6F73">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#EEF3F4; --surface:#FFFFFF; --ink:#12263A; --muted:#566879; --line:#D3DEE3;
+    --accent:#0E6F73; --accent-ink:#FFFFFF; --accent-soft:#DCEEEF;
+    --ok:#1F6B45; --ok-bg:#DFF3E7; --flag:#A8321F; --flag-bg:#FBE4DF;
+    box-sizing:border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#0D1A24; --surface:#15283A; --ink:#E6EEF3; --muted:#93A6B5; --line:#263B4D;
+      --accent:#4FC3C7; --accent-ink:#06222A; --accent-soft:#17363F;
+      --ok:#7ED3A2; --ok-bg:#17382A; --flag:#FF9C8A; --flag-bg:#3A1F1B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#0D1A24; --surface:#15283A; --ink:#E6EEF3; --muted:#93A6B5; --line:#263B4D;
+    --accent:#4FC3C7; --accent-ink:#06222A; --accent-soft:#17363F;
+    --ok:#7ED3A2; --ok-bg:#17382A; --flag:#FF9C8A; --flag-bg:#3A1F1B;
+  }
+  [hidden] { display:none !important; }
+  html { height:100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100%; background:var(--bg); color:var(--ink);
+    font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size:16px; line-height:1.45; -webkit-text-size-adjust:100%;
+  }
+  main { max-width:640px; margin:0 auto; padding:16px 14px 48px; }
+  h1 { font-size:22px; margin:4px 0 2px; letter-spacing:-0.01em; }
+  h2 { font-size:19px; margin:0 0 8px; }
+  h3 { font-size:15px; margin:0 0 6px; }
+  .sub { color:var(--muted); margin:0 0 14px; font-size:14px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; }
+  .field { flex:1 1 120px; min-width:0; }
+  label.lbl { display:block; font-size:13px; color:var(--muted); margin-bottom:4px; }
+  input[type=text], input[type=number], textarea, select {
+    width:100%; font:inherit; color:var(--ink); background:var(--bg);
+    border:1px solid var(--line); border-radius:10px; padding:10px 12px; min-height:44px;
+  }
+  textarea { resize:vertical; min-height:96px; }
+  :focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  .seg { display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--bg); }
+  .seg button { flex:1; border:0; background:transparent; color:var(--ink); font:inherit; min-height:44px; padding:0 10px; cursor:pointer; }
+  .seg button[aria-pressed="true"] { background:var(--accent); color:var(--accent-ink); font-weight:700; }
+  .tabs { margin-bottom:12px; }
+  .tabgroup { margin-bottom:10px; }
+  .grplbl { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin:0 2px 5px; }
+  .tabrow { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  h3.sumgrp { font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin:14px 0 2px; }
+  h3.sumgrp:first-child { margin-top:0; }
+  h4.sumsub { font-size:13px; font-weight:700; color:var(--ink); margin:10px 0 0; }
+  .sublbl { font-size:13px; font-weight:700; color:var(--muted); margin:6px 2px 4px 8px; }
+  .tab { border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:12px; padding:8px 2px; min-height:52px; font:inherit; font-size:12.5px; cursor:pointer; position:relative; line-height:1.15; }
+  .tab[aria-selected="true"] { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .tab .done { position:absolute; top:6px; right:7px; width:9px; height:9px; border-radius:50%; background:var(--ok); }
+  .tab[aria-selected="true"] .done { background:var(--accent-ink); }
+  .tab:disabled { opacity:.5; }
+  details.proto { border-top:1px solid var(--line); margin-top:4px; padding-top:8px; }
+  details.proto > summary, details.card > summary { list-style:none; display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; font-weight:700; min-height:44px; }
+  details.proto > summary { background:var(--accent-soft); border-radius:10px; padding:6px 12px; }
+  details > summary::-webkit-details-marker { display:none; }
+  details.proto > summary::after, details.card > summary::after { content:'\25B8'; font-size:20px; line-height:1; color:var(--accent); transition:transform .15s; flex:none; }
+  details[open] > summary::after { transform:rotate(90deg); }
+  .hint { font-weight:400; font-size:13px; color:var(--accent); margin-left:8px; }
+  details[open] > summary .hint { display:none; }
+  details > summary:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  details.proto ul { margin:6px 0 0; padding-left:20px; }
+  details.proto li { margin:4px 0; }
+  .safety { font-size:14px; color:var(--muted); margin-top:8px; }
+  .display { text-align:center; padding:14px 0 6px; }
+  .big { font-size:clamp(60px,20vw,104px); font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-0.02em; line-height:1; }
+  .unit { color:var(--muted); font-size:18px; margin-left:4px; font-weight:400; letter-spacing:0; }
+  .status { color:var(--muted); min-height:22px; margin-top:6px; }
+  .btn { display:block; width:100%; border:0; border-radius:14px; font:inherit; font-weight:700; font-size:20px; min-height:64px; cursor:pointer; background:var(--accent); color:var(--accent-ink); }
+  .btn.stop { background:var(--flag); color:#fff; }
+  :root[data-theme="dark"] .btn.stop { color:#2A0E09; }
+  .btn.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); font-size:16px; min-height:48px; font-weight:400; }
+  .btn.small { font-size:16px; min-height:48px; }
+  .btn.tap { min-height:132px; font-size:26px; }
+  .btns { display:grid; gap:8px; margin-top:10px; }
+  .btns.two { grid-template-columns:1fr 1fr; }
+  .adjust { display:flex; justify-content:center; align-items:center; gap:14px; margin-top:6px; }
+  .adjust button { width:52px; height:52px; border-radius:50%; border:1px solid var(--line); background:var(--bg); color:var(--ink); font-size:24px; cursor:pointer; }
+  .manual { display:flex; gap:8px; align-items:end; margin-top:14px; border-top:1px solid var(--line); padding-top:12px; }
+  .manual .field { flex:1; }
+  .manual button { min-height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); font:inherit; cursor:pointer; }
+  ul.trials { list-style:none; padding:0; margin:12px 0 0; }
+  ul.trials li { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px solid var(--line); }
+  ul.trials .x { border:0; background:transparent; color:var(--muted); font:inherit; min-height:44px; min-width:44px; cursor:pointer; text-decoration:underline; }
+  .pill { display:inline-block; border-radius:999px; padding:3px 10px; font-size:13px; font-weight:700; }
+  .pill.ok { background:var(--ok-bg); color:var(--ok); }
+  .pill.flag { background:var(--flag-bg); color:var(--flag); }
+  .pill.none { background:var(--bg); color:var(--muted); border:1px solid var(--line); }
+  .res { padding:10px 0; border-top:1px solid var(--line); }
+  .res:first-of-type { border-top:0; }
+  .res .top { display:flex; justify-content:space-between; gap:8px; align-items:baseline; flex-wrap:wrap; }
+  .res .val { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .res p { margin:4px 0 0; font-size:14px; color:var(--muted); }
+  .foot { font-size:12.5px; color:var(--muted); margin-top:10px; }
+  .link { background:none; border:0; color:var(--accent); font:inherit; text-decoration:underline; cursor:pointer; min-height:44px; padding:0; }
+  .fabitem { border-top:1px solid var(--line); padding:12px 0; }
+  .fabitem:first-of-type { border-top:0; }
+  .fabitem .nm { font-weight:700; }
+  .byline { font-size:13px; color:var(--ink); margin:-6px 0 14px; line-height:1.4; }
+  #about h3 { margin:0 0 6px; font-size:15px; }
+  #about p { font-size:13px; color:var(--muted); margin:6px 0 0; }
+  .chg { color:var(--muted); font-size:14px; margin:4px 0 0; }
+  .sessbtns { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px; }
+  .sessbtns button { min-height:44px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); font:inherit; font-size:14px; cursor:pointer; padding:0 4px; }
+  .timedtag { font-weight:400; color:var(--muted); }
+  .fabitem .cue { color:var(--muted); font-size:14px; margin:2px 0 8px; }
+  .fabitem .sidelbl { font-size:13px; color:var(--muted); margin:6px 0 3px; }
+  .cdrow { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; align-items:center; margin-top:8px; }
+  .cdrow button { min-height:48px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); font:inherit; cursor:pointer; }
+  .opts { display:grid; gap:6px; }
+  .opt { display:flex; gap:12px; align-items:center; text-align:left; width:100%; min-height:48px; padding:8px 12px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit; font-size:15px; line-height:1.3; cursor:pointer; }
+  .opt b { flex:0 0 28px; height:28px; border-radius:50%; display:grid; place-items:center; background:var(--surface); border:1px solid var(--line); font-size:15px; }
+  .opt[aria-pressed="true"] { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .opt[aria-pressed="true"] b { background:var(--accent-ink); color:var(--accent); border-color:var(--accent-ink); }
+  .cddisp { text-align:center; font-size:44px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:6px; }
+  .ctrow { padding:10px 0; border-top:1px solid var(--line); }
+  .ctrow:first-child { border-top:0; }
+  .ctname { font-weight:700; font-size:15px; margin-bottom:6px; }
+  .ctcells { display:grid; grid-template-columns:repeat(3,1fr) auto; gap:6px; align-items:center; }
+  .ctcell { min-height:48px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit; font-variant-numeric:tabular-nums; cursor:pointer; }
+  .ctcell[aria-pressed="true"] { background:var(--accent-soft); border-color:var(--accent); outline:2px solid var(--accent); font-weight:700; }
+  .ctmean { font-size:14px; color:var(--muted); min-width:84px; text-align:right; }
+  .vgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+  .manual button + button { margin-left:0; }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Functional mobility test station</h1>
+  <p class="sub">Mobility, balance and endurance tests for older adults. Nothing is sent to a server. Sessions you save stay in this browser on this device.</p>
+  <p class="byline">Created by Kenneth L. Miller, PT, DPT, PhD, FNAP<br>Associate Professor, Department of Physical Therapy, MUSC College of Health Professions</p>
+
+  <section class="card" id="draftbar" aria-label="Unsaved session found" hidden>
+    <p style="margin:0 0 8px"><strong id="draftmsg">Unsaved session found.</strong></p>
+    <div class="btns two"><button class="btn small" id="draftresume" type="button">Resume it</button><button class="btn small ghost" id="draftdiscard" type="button">Discard it</button></div>
+  </section>
+
+  <section class="card" aria-label="Patient details">
+    <div class="row">
+      <div class="field">
+        <label class="lbl" for="code">Patient initials</label>
+        <input id="code" type="text" maxlength="2" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="e.g. KM">
+      </div>
+      <div class="field">
+        <label class="lbl" for="visit">Visit date</label>
+        <input id="visit" type="date">
+      </div>
+    </div>
+    <p class="foot" style="margin:6px 0 12px">Use first and last initials only, such as KM. Do not enter names or birth dates.</p>
+    <div class="row">
+      <div class="field">
+        <label class="lbl" for="age">Age</label>
+        <input id="age" type="number" inputmode="numeric" min="18" max="110" placeholder="e.g. 74">
+      </div>
+      <div class="field">
+        <span class="lbl" id="sexlbl">Sex (for age norms)</span>
+        <div class="seg" role="group" aria-labelledby="sexlbl">
+          <button type="button" data-sex="F" aria-pressed="false">Female</button>
+          <button type="button" data-sex="M" aria-pressed="false">Male</button>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="field" style="flex-basis:200px">
+        <label class="lbl" for="device">Assistive device / footwear</label>
+        <input id="device" type="text" placeholder="e.g. rolling walker, none">
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="field">
+        <label class="lbl" for="height">Height (cm), for 6MWT predicted</label>
+        <input id="height" type="number" inputmode="decimal" min="100" max="230" placeholder="optional">
+      </div>
+      <div class="field">
+        <label class="lbl" for="weight">Weight (kg), for 6MWT predicted</label>
+        <input id="weight" type="number" inputmode="decimal" min="30" max="250" placeholder="optional">
+      </div>
+    </div>
+    <div class="btns" style="margin-top:12px"><button class="btn small" id="savesess" type="button">Save session on this device</button></div>
+    <div class="status" id="savestatus"></div>
+  </section>
+
+  <details class="card" id="sesscard">
+    <summary id="sesssum">Saved sessions (<span id="sesscount">0</span>)</summary>
+    <div id="sessbox">
+      <div id="sessions"></div>
+      <p class="foot">Kept in this browser on this device for 90 days after you last save, then deleted automatically. Nothing is sent to a server. Clearing your browser data also removes them. Change-since-last-visit comparisons use saved sessions with the same initials, the same sex and an age within 2 years.</p>
+    </div>
+    <h3 class="sumgrp" style="margin-top:14px">Session files (backup or move to another device)</h3>
+    <div class="btns two"><button class="btn small ghost" id="filesave" type="button" hidden>Save session file</button><button class="btn small ghost" id="fileopen" type="button">Open session file</button></div>
+    <div class="status" id="filestatus"></div>
+    <input type="file" id="fileinput" accept=".json,application/json" hidden>
+    <p class="foot">A session file holds the initials, visit date and results. Store it only where your institution keeps patient data.</p>
+  </details>
+
+  <div class="tabs" role="tablist" aria-label="Tests" id="tabs"></div>
+
+  <section class="card" id="panel" aria-live="polite"></section>
+
+  <section class="card" aria-label="Session summary">
+    <h2>Session summary</h2>
+    <div id="summary"></div>
+    <label class="lbl" for="extra" style="margin-top:12px">Extra observations (included in the note)</label>
+    <textarea id="extra" placeholder="e.g. used arms to rise, loss of balance on turn, stopped at 3 stands"></textarea>
+    <label class="lbl" for="note" style="margin-top:12px">Note for the chart</label>
+    <textarea id="note" readonly placeholder="The chart note appears here once you record a result."></textarea>
+    <div class="btns two" id="exportrow" hidden>
+      <button class="btn small ghost" id="exptxt" type="button">Export as .txt</button>
+      <button class="btn small ghost" id="expdocx" type="button">Export as Word</button>
+    </div>
+    <div class="btns two">
+      <button class="btn small" id="copy" type="button">Copy note</button>
+      <button class="btn small ghost" id="clear" type="button">Start new patient</button>
+    </div>
+    <div class="card" id="clearpanel" hidden style="margin:10px 0 0">
+      <p style="margin:0 0 8px"><strong>You have unsaved results.</strong> Save or export them before clearing?</p>
+      <div class="btns two">
+        <button class="btn small" id="cpsave" type="button">Save session</button>
+        <button class="btn small ghost" id="cpexp" type="button">Export note (.txt)</button>
+        <button class="btn small ghost" id="cpclear" type="button">Clear anyway</button>
+        <button class="btn small ghost" id="cpcancel" type="button">Cancel</button>
+      </div>
+    </div>
+    <div class="status" id="copystatus"></div>
+    <p class="foot">Cut-offs are screening references, not diagnoses: TUG ≥12 s (CDC STEADI); TUG-cog and TUG-manual are reported as dual-task cost against the standard TUG, with no cut-off; gait speed bands from Fritz &amp; Lusardi 2009, with &lt;1.0 m/s linked to higher risk of adverse outcomes; 5×STS &gt;15 s for recurrent falls (Buatois 2008), age means from Bohannon 2006; 30s chair stand below-average scores from CDC STEADI; 2-minute step and 6-minute walk age ranges are the middle 50% of community-dwelling adults 60 to 94 (Rikli &amp; Jones 1999, 6MWT converted from yards); 6MWT predicted distance and lower limit of normal from Enright &amp; Sherrill 1998; FAB ≤25 of 40 (CSU Fullerton scoring form); FGA ≤22 of 30 (Wrisley &amp; Kumar 2010); DGI under 19 of 24 predicts falls and above 22 marks safe ambulators; Berg Balance Scale under 45 of 56 indicates greater fall risk, with 41 to 56 low, 21 to 40 medium and 0 to 20 high (Berg 1992); FIST has no cut-off (Gorman 2010); Four Square Step Test over 15 s identifies multiple fallers (Dite & Temple 2002); ABC Scale bands under 50, 50 to 80 and over 80 percent with under 67 percent at risk for falling (Powell & Myers 1995; Lajoie & Gallagher 2004); FES-I bands 16 to 19, 20 to 27 and 28 to 64, and Short FES-I bands 7 to 8, 9 to 13 and 14 to 28 (Delbaere et al. 2010); not holding the tandem stance for 10 s on the 4-Stage Balance Test indicates increased fall risk (CDC STEADI); single limb stance under 5 s with eyes open is linked to higher risk of injurious falls (Vellas 1997), with age means of the best of 3 trials from Springer 2007; mCTSIB interpretation follows the Shirley Ryan AbilityLab form; Brief-BESTest has no single cut-off; occiput-to-wall distance above 0 cm is abnormal, with 4 cm or 5 cm used for hyperkyphosis; rib-pelvic distance of 2 fingerbreadths or less as a screen for vertebral fracture (Fukui cohort; National Osteoporosis Foundation materials say under 2); back scratch and chair sit-and-reach use the middle 50% by age and sex (Rikli &amp; Jones 1999); mTBR percentile bands from Stanziano 2010. Confirm against your clinic's protocol.</p>
+  </section>
+  <section class="card" id="about" aria-label="About and disclaimer">
+    <h3>About and disclaimer</h3>
+    <p><strong>Created by Kenneth L. Miller, PT, DPT, PhD, FNAP</strong>, Associate Professor, Department of Physical Therapy, MUSC College of Health Professions.</p>
+    <p>This tool is for educational use and to support the clinical judgment of licensed health professionals. It does not provide medical advice, diagnosis or treatment, and it does not replace professional judgment, the original instruments or your clinic&rsquo;s protocols.</p>
+    <p>Protocols, scoring definitions, reference values and cut-offs are condensed from published sources and may be incomplete or out of date. Confirm them against the original instruments before relying on a result. The author and the Medical University of South Carolina are not responsible for decisions made using this tool.</p>
+    <p>Enter initials only. Do not enter names, birth dates or other identifying information. Nothing is sent to a server; saved sessions stay in your browser on your device.</p>
+  </section>
+</main>
+
+<script>
+(function(){
+  var FGA_ITEMS = [
+    { n:'Gait on level surface', timed:true, cue:'Walk at normal speed along a 6 m (20 ft) walkway marked 30 cm (12 in) wide.', d:[
+      'Cannot walk 6 m without assistance, severe deviations or imbalance, deviates more than 38 cm (15 in), or touches the wall',
+      'Walks slowly with an abnormal pattern or imbalance, deviates 25 to 38 cm (10 to 15 in), or takes more than 7 s',
+      'Takes 5.5 to 7 s, or uses a device, slower speed, mild deviations, or deviates 15 to 25 cm (6 to 10 in)',
+      'Under 5.5 s, no device, good speed, no imbalance, normal pattern, within 15 cm (6 in) of the path'] },
+    { n:'Change in gait speed', cue:'Walk at normal pace for 1.5 m (5 ft), then "go" (as fast as possible) for 1.5 m, then "slow" (as slowly as possible) for 1.5 m.', d:[
+      'Cannot change speeds, deviates more than 15 in, or loses balance and has to reach for the wall or be caught',
+      'Only minor speed changes, or changes speed with significant deviations, deviates 10 to 15 in, or loses balance but recovers and continues',
+      'Changes speed with mild deviations (6 to 10 in), or no deviations but cannot achieve a significant change, or uses a device',
+      'Smoothly changes speed with no loss of balance or deviation, clear difference between normal, fast and slow, within 6 in'] },
+    { n:'Gait with horizontal head turns', cue:'Walk 6 m at normal pace. After 3 steps turn the head right, after 3 more turn left, alternating every 3 steps for 2 repetitions each way.', d:[
+      'Severe disruption: staggers beyond 15 in, loses balance, stops or reaches for the wall',
+      'Moderate change in velocity, slows down, deviates 10 to 15 in but recovers and keeps walking',
+      'Smooth head turns with slight change in velocity, deviates 6 to 10 in, or uses a device',
+      'Smooth head turns with no change in gait, within 6 in'] },
+    { n:'Gait with vertical head turns', cue:'Same task, tipping the head up then down every 3 steps for 2 repetitions each way.', d:[
+      'Severe disruption: staggers beyond 15 in, loses balance, stops or reaches for the wall',
+      'Moderate change in velocity, slows down, deviates 10 to 15 in but recovers and keeps walking',
+      'Slight change in velocity, deviates 6 to 10 in, or uses a device',
+      'No change in gait, within 6 in'] },
+    { n:'Gait and pivot turn', timed:true, cue:'Walk at normal pace. On "turn and stop," turn as quickly as possible to face the opposite direction and stop.', d:[
+      'Cannot turn safely, needs assistance to turn and stop',
+      'Turns slowly, needs verbal cueing, or needs several small steps to regain balance',
+      'Turns safely but takes more than 3 s with no loss of balance, or turns within 3 s but needs small steps to catch balance',
+      'Pivots safely within 3 s and stops quickly with no loss of balance'] },
+    { n:'Step over obstacle', cue:'Walk at normal speed and step over (not around) a shoebox.', d:[
+      'Cannot perform without assistance',
+      'Steps over one shoebox (11.4 cm, 4.5 in) but must slow down and adjust steps, may need verbal cueing',
+      'Steps over one shoebox (4.5 in) without changing speed, no imbalance',
+      'Steps over two stacked shoeboxes (23 cm, 9 in) without changing speed, no imbalance'] },
+    { n:'Gait with narrow base of support', cue:'Arms folded across the chest, walk heel to toe for 3.6 m (12 ft). Count steps in a straight line, up to 10. The form prints 7 steps in both the 1 and 2 categories, so follow your clinic convention.', d:[
+      'Fewer than 4 heel-to-toe steps, or cannot perform without assistance',
+      '4 to 7 steps',
+      '7 to 9 steps',
+      '10 heel-to-toe steps with no staggering'] },
+    { n:'Gait with eyes closed', timed:true, cue:'Walk at normal speed for 6 m (20 ft) with eyes closed.', d:[
+      'Cannot walk 6 m without assistance, severe deviations or imbalance, deviates more than 15 in, or will not attempt',
+      'Slow speed, abnormal pattern or imbalance, deviates 10 to 15 in, or takes more than 9 s',
+      'Uses a device, slower speed, mild deviations, deviates 6 to 10 in, or takes 7 to 9 s',
+      'No device, good speed, no imbalance, normal pattern, within 6 in, and under 7 s'] },
+    { n:'Ambulating backwards', cue:'Walk backwards until told to stop.', d:[
+      'Cannot walk 6 m without assistance, severe deviations or imbalance, deviates more than 15 in, or will not attempt',
+      'Slow speed, abnormal pattern or imbalance, deviates 10 to 15 in',
+      'Uses a device, slower speed, mild deviations, or deviates 6 to 10 in',
+      'No device, good speed, no imbalance, normal pattern, within 6 in'] },
+    { n:'Steps', cue:'Walk up the stairs as at home, using the rail if necessary, turn at the top and walk down.', d:[
+      'Cannot do safely',
+      'Two feet to a stair and must use the rail',
+      'Alternating feet but must use the rail',
+      'Alternating feet, no rail'] }
+  ];
+  var DGI_ITEMS = [
+    { n:'Gait on level surface', cue:'Walk at normal speed for 20 ft.', d:[
+      'Cannot walk 20 ft without assistance, severe gait deviations or imbalance',
+      'Walks 20 ft slowly with an abnormal pattern and evidence of imbalance',
+      'Walks 20 ft with a device, slower speed, mild gait deviations',
+      'Walks 20 ft with no device, good speed, no imbalance, normal pattern'] },
+    { n:'Change in gait speed', cue:'Walk at normal pace for 5 ft, then "go" (as fast as possible) for 5 ft, then "slow" (as slowly as possible) for 5 ft.', d:[
+      'Cannot change speeds, or loses balance and has to reach for the wall or be caught',
+      'Only minor speed changes, or changes speed with significant deviations, or loses balance but recovers and continues',
+      'Changes speed with mild deviations, or no deviations but cannot achieve a significant change, or uses a device',
+      'Smoothly changes speed with no loss of balance or deviation, clear difference between normal, fast and slow'] },
+    { n:'Gait with horizontal head turns', cue:'Walk at normal pace. Cue "look right," then "look left," then "look straight" while the patient keeps walking.', d:[
+      'Severe disruption: staggers outside a 15 in path, loses balance, stops or reaches for the wall',
+      'Moderate change in velocity, slows down, staggers but recovers and continues',
+      'Smooth head turns with slight change in velocity (minor disruption of the path), or uses a walking aid',
+      'Smooth head turns with no change in gait'] },
+    { n:'Gait with vertical head turns', cue:'Walk at normal pace. Cue "look up," then "look down," then "look straight" while the patient keeps walking.', d:[
+      'Severe disruption: staggers outside a 15 in path, loses balance, stops or reaches for the wall',
+      'Moderate change in velocity, slows down, staggers but recovers and continues',
+      'Smooth head turns with slight change in velocity (minor disruption of the path), or uses a walking aid',
+      'Smooth head turns with no change in gait'] },
+    { n:'Gait and pivot turn', timed:true, cue:'Walk at normal pace. On "turn and stop," turn as quickly as possible to face the opposite direction and stop.', d:[
+      'Cannot turn safely, needs assistance to turn and stop',
+      'Turns slowly, needs verbal cueing, or needs several small steps to catch balance',
+      'Pivots safely in more than 3 s and stops with no loss of balance',
+      'Pivots safely within 3 s and stops quickly with no loss of balance'] },
+    { n:'Step over obstacle', cue:'Walk at normal speed and step over (not around) a shoebox.', d:[
+      'Cannot perform without assistance',
+      'Steps over the box but must stop first, may need verbal cueing',
+      'Steps over the box but must slow down and adjust steps',
+      'Steps over the box without changing speed, no imbalance'] },
+    { n:'Step around obstacles', cue:'Walk at normal speed. Go around the right side of a cone about 6 ft away, then around the left side of a second cone 6 ft beyond it.', d:[
+      'Unable to clear the cones, walks into one or both, or needs physical assistance',
+      'Clears the cones but must slow or speed up significantly, or needs verbal cueing',
+      'Gets around both cones but must slow down and adjust steps',
+      'Walks around the cones safely without changing speed, no imbalance'] },
+    { n:'Steps', cue:'Walk up the stairs as at home, using the rail if necessary, turn at the top and walk down.', d:[
+      'Cannot do safely',
+      'Two feet to a stair and must use the rail',
+      'Alternating feet but must use the rail',
+      'Alternating feet, no rail'] }
+  ];
+  var BERG_ITEMS = [
+    { n:'Sitting to standing', cue:'"Please stand up. Try not to use your hands for support."', d:[
+      'Needs moderate or maximal assistance to stand',
+      'Needs minimal aid to stand or stabilize',
+      'Stands using hands after several tries',
+      'Stands independently using hands',
+      'Stands without using hands and stabilizes independently'] },
+    { n:'Standing unsupported', timed:true, cue:'"Stand for 2 minutes without holding on." If 2 minutes is achieved, score full points for item 3 and go to item 4.', d:[
+      'Unable to stand 30 s unsupported',
+      'Needs several tries to stand 30 s unsupported',
+      'Stands 30 s unsupported',
+      'Stands 2 min with supervision',
+      'Stands safely for 2 min'] },
+    { n:'Sitting unsupported, feet supported', timed:true, cue:'"Sit with your arms folded for 2 minutes," back unsupported and feet on the floor or a stool.', d:[
+      'Unable to sit 10 s without support',
+      'Able to sit 10 s',
+      'Able to sit 30 s',
+      'Sits 2 min under supervision',
+      'Sits safely and securely for 2 min'] },
+    { n:'Standing to sitting', cue:'"Please sit down."', d:[
+      'Needs assistance to sit',
+      'Sits independently but has uncontrolled descent',
+      'Uses the back of the legs against the chair to control descent',
+      'Controls descent by using hands',
+      'Sits safely with minimal use of hands'] },
+    { n:'Transfers', cue:'Pivot transfer toward a seat with armrests and toward a seat without armrests, using two chairs or a bed and a chair.', d:[
+      'Needs two people to assist, or supervision to be safe',
+      'Needs one person to assist',
+      'Transfers with verbal cueing and/or supervision',
+      'Transfers safely with a definite need for hands',
+      'Transfers safely with minor use of hands'] },
+    { n:'Standing unsupported with eyes closed', timed:true, cue:'"Close your eyes and stand still for 10 seconds."', d:[
+      'Needs help to keep from falling',
+      'Unable to keep eyes closed for 3 s but stays safely',
+      'Stands 3 s',
+      'Stands 10 s with supervision',
+      'Stands 10 s safely'] },
+    { n:'Standing unsupported with feet together', timed:true, cue:'"Place your feet together and stand without holding on."', d:[
+      'Needs help to attain the position and cannot hold 15 s',
+      'Needs help to attain the position but stands 15 s with feet together',
+      'Places feet together independently but cannot hold 30 s',
+      'Places feet together independently and stands 1 min with supervision',
+      'Places feet together independently and stands 1 min safely'] },
+    { n:'Reaching forward with outstretched arm', cue:'Arm lifted to 90 degrees, fingers stretched out, reach forward as far as possible. Hold a ruler at the fingertips at the start, record the distance at the most forward lean, and use both arms when possible to avoid trunk rotation.', d:[
+      'Loses balance while trying, or needs external support',
+      'Reaches forward but needs supervision',
+      'Reaches forward 5 cm (2 in)',
+      'Reaches forward 12 cm (5 in)',
+      'Reaches forward confidently 25 cm (10 in)'] },
+    { n:'Pick up object from the floor', cue:'"Pick up the shoe or slipper placed in front of your feet."', d:[
+      'Unable to try, or needs assistance to keep from losing balance or falling',
+      'Unable to pick up and needs supervision while trying',
+      'Unable to pick up but reaches 2 to 5 cm (1 to 2 in) from it and keeps balance independently',
+      'Picks it up but needs supervision',
+      'Picks it up safely and easily'] },
+    { n:'Turning to look behind over left and right shoulders', cue:'"Turn to look directly behind you over your left shoulder, then your right." An object behind the patient can encourage a better turn.', d:[
+      'Needs assistance to keep from losing balance or falling',
+      'Needs supervision when turning',
+      'Turns sideways only but maintains balance',
+      'Looks behind from one side only, the other side shows less weight shift',
+      'Looks behind from both sides and shifts weight well'] },
+    { n:'Turn 360 degrees', timed:true, cue:'"Turn completely around in a full circle, pause, then turn a full circle in the other direction."', d:[
+      'Needs assistance while turning',
+      'Needs close supervision or verbal cueing',
+      'Turns 360 degrees safely but slowly',
+      'Turns 360 degrees safely in 4 s or less on one side only',
+      'Turns 360 degrees safely in 4 s or less'] },
+    { n:'Place alternate foot on step or stool', timed:true, cue:'Stand unsupported and place each foot alternately on the step or stool until each foot has touched it four times.', d:[
+      'Needs assistance to keep from falling, or unable to try',
+      'Completes more than 2 steps and needs minimal assistance',
+      'Completes 4 steps without aid, with supervision',
+      'Stands independently and completes 8 steps in more than 20 s',
+      'Stands independently and safely and completes 8 steps in 20 s'] },
+    { n:'Standing unsupported, one foot in front', timed:true, cue:'Demonstrate. Place one foot directly in front of the other, or step far enough ahead that the front heel is ahead of the other toes. For 3 points the step should exceed the length of the other foot, with stance width close to normal stride width.', d:[
+      'Loses balance while stepping or standing',
+      'Needs help to step but holds 15 s',
+      'Takes a small step independently and holds 30 s',
+      'Places the foot ahead independently and holds 30 s',
+      'Places the foot tandem independently and holds 30 s'] },
+    { n:'Standing on one leg', timed:true, cue:'"Stand on one leg as long as you can without holding on."', d:[
+      'Unable to try, or needs assistance to prevent a fall',
+      'Tries to lift the leg, cannot hold 3 s, but remains standing independently',
+      'Lifts the leg independently and holds 3 s or more',
+      'Lifts the leg independently and holds 5 to 10 s',
+      'Lifts the leg independently and holds more than 10 s'] }
+  ];
+  var FIST_D = [
+    'Dependent: needs complete physical assistance and cannot complete the task even with physical assist',
+    'Needs assistance: cannot complete without physical assist (document min, mod or max)',
+    'Upper extremity support: must use the arms for support or assistance to complete successfully',
+    'Verbal cues or increased time: completes independently and successfully, but needs more time or cues',
+    'Independent: completes the task independently and successfully'];
+  var FIST_ITEMS = [
+    { n:'Anterior nudge', cue:'Examiner nudges at the superior sternum.', d:FIST_D },
+    { n:'Posterior nudge', cue:'Examiner nudges between the scapular spines.', d:FIST_D },
+    { n:'Lateral nudge', cue:'Examiner nudges toward the dominant side at the acromion.', d:FIST_D },
+    { n:'Static sitting', timed:true, cue:'Sit still for 30 seconds.', d:FIST_D },
+    { n:'Sitting, shake "no"', cue:'Turn the head left and right as if shaking "no".', d:FIST_D },
+    { n:'Sitting, eyes closed', timed:true, cue:'Sit with eyes closed for 30 seconds.', d:FIST_D },
+    { n:'Sitting, lift foot', cue:'Lift the dominant-side foot 1 inch off the surface, twice.', d:FIST_D },
+    { n:'Pick up object from behind', cue:'Pick up an object placed at the midline, a hand breadth behind the patient.', d:FIST_D },
+    { n:'Forward reach', cue:'Reach forward with the dominant arm and complete the full motion.', d:FIST_D },
+    { n:'Lateral reach', cue:'Reach to the side with the dominant arm, clearing the opposite ischial tuberosity.', d:FIST_D },
+    { n:'Pick up object from floor', cue:'Pick up an object from the floor between the feet.', d:FIST_D },
+    { n:'Posterior scooting', cue:'Scoot backward 2 inches.', d:FIST_D },
+    { n:'Anterior scooting', cue:'Scoot forward 2 inches.', d:FIST_D },
+    { n:'Lateral scooting', cue:'Scoot 2 inches toward the dominant side.', d:FIST_D }
+  ];
+  var ABC_ITEMS = ['Walk around the house','Walk up or down stairs','Bend over and pick up a slipper from the front of a closet floor','Reach for a small can off a shelf at eye level','Stand on tiptoes and reach for something above your head','Stand on a chair and reach for something','Sweep the floor','Walk outside the house to a car parked in the driveway','Get into or out of a car','Walk across a parking lot to the mall','Walk up or down a ramp','Walk in a crowded mall where people rapidly walk past you','Are bumped into by people as you walk through the mall','Step onto or off an escalator while holding onto a railing','Step onto or off an escalator while holding parcels so you cannot hold the railing','Walk outside on icy sidewalks'];
+  var FESI_ITEMS = ['Cleaning the house (for example sweep, vacuum, dust)','Getting dressed or undressed','Preparing simple meals','Taking a bath or shower','Going to the shop','Getting in or out of a chair','Going up or down stairs','Walking around in the neighborhood','Reaching for something above your head or on the ground','Going to answer the telephone before it stops ringing','Walking on a slippery surface (for example wet or icy)','Visiting a friend or relative','Walking in a place with crowds','Walking on an uneven surface (for example rocky ground, poorly maintained pavement)','Walking up or down a slope','Going out to a social event (for example religious service, family gathering or club meeting)'];
+  var SFESI_ITEMS = ['Getting dressed or undressed','Taking a bath or shower','Getting in or out of a chair','Going up or down stairs','Reaching for something above your head or on the ground','Walking up or down a slope','Going out to a social event (for example religious service, family gathering or club meeting)'];
+  var TESTS = {
+    tug:  { tab:'TUG', name:'Timed Up and Go', unit:'s', kind:'watch',
+      protocol:[
+        'Armchair with a seat height of about 46 cm (18 in). Mark a line 3 m (10 ft) away.',
+        'Patient sits with back against the chair, wearing usual footwear and using their usual device.',
+        'Say "Go." Patient stands, walks to the line at a comfortable, safe pace, turns, walks back and sits.',
+        'Stop the clock when their back touches the chair.',
+        'Allow one practice trial, then time one or two trials.'] },
+    tugcog: { tab:'TUG-cog', name:'TUG cognitive (TUG-cog)', unit:'s', kind:'watch',
+      protocol:[
+        'Same chair, 3 m line and setup as the standard TUG.',
+        'Have the patient practice counting backward by 3s while seated, so you know they understand the task.',
+        'Give the random starting number shown below. Say: "Count backward by 3s out loud, starting from this number. Start counting, then stand and walk when I say Go."',
+        'Time as for the standard TUG. The patient keeps counting through the walk, turn and sit.',
+        'Record any counting errors or pauses in extra observations. Use a new starting number for each trial.'] },
+    tugman: { tab:'TUG-manual', name:'TUG manual (TUG-manual)', unit:'s', kind:'watch',
+      protocol:[
+        'Same chair, 3 m line and setup as the standard TUG.',
+        'Hand the patient a full cup or glass of water (fill it nearly to the rim). Use the same cup each time.',
+        'Say: "Carry the water to the line and back without spilling, then sit."',
+        'Time as for the standard TUG. Record spills or any stop to steady the cup in extra observations.',
+        'If the patient uses a device that needs both hands, choose another carrying task and record it.'] },
+    gait: { tab:'Gait speed', name:'Gait speed', unit:'m/s', kind:'watch',
+      protocol:[
+        'Mark a timed section (4 m is common; 6 or 10 m also used) with at least 2 m before and after for acceleration and slowing.',
+        'Comfortable speed: the patient walks at their usual comfortable pace with their usual device. Do not talk or coach during the walk.',
+        'Fast speed: the same course, with the instruction to walk as fast as they safely can without running. Pick the speed with the buttons below before each trial.',
+        'Start the clock when the first foot crosses the start line. Stop when the first foot crosses the finish line.',
+        'Do two or three trials at each speed. Results are averaged separately for each speed, and the gait speed reserve (fast minus comfortable) is shown when both are recorded.'] },
+    sts:  { tab:'5× STS', name:'Five times sit to stand', unit:'s', kind:'watch',
+      protocol:[
+        'Firm chair about 43 to 46 cm (17 to 18 in) high, backed against a wall. Patient crosses arms over chest.',
+        'Demonstrate, then allow one practice stand.',
+        'Say "Go." Patient stands fully and sits five times as fast as is safe.',
+        'Stop the clock when the buttocks touch the seat after the fifth stand.',
+        'If arms are needed or the patient cannot finish, stop and record it under extra observations.'] },
+    cst:  { tab:'30s chair stand', name:'30-second chair stand', unit:'stands', kind:'count', dur:30,
+      countUnit:'stands', tapLabel:'Count stand', tapHint:'Tap for each full stand.', readyHint:'Ready when the patient is seated with arms crossed.',
+      protocol:[
+        'Firm chair about 43 cm (17 in) high, backed against a wall. Patient crosses arms over chest, feet flat.',
+        'Demonstrate, then allow one or two practice stands.',
+        'Start the 30-second clock on "Go." Tap once for each full stand.',
+        'Count a stand if the patient is more than halfway up when time ends.',
+        'If the patient needs their arms to stand the first time, stop and score 0.'] },
+    step2: { tab:'2-min step', name:'2-minute step test', unit:'steps', kind:'count', dur:120,
+      countUnit:'right knee reaches', tapLabel:'Count right knee', tapHint:'Tap each time the right knee reaches the mark.', readyHint:'Ready when the patient is standing beside the wall.',
+      protocol:[
+        'Mark the wall at the height halfway between the patient\u2019s kneecap and the top of the hip bone (iliac crest), using a tape measure.',
+        'Patient stands next to the wall with a stable chair or the wall within reach for balance.',
+        'On "Go," the patient steps in place as many times as possible for 2 minutes, lifting each knee to the mark.',
+        'Count only the times the right knee reaches the mark. If form drops, the patient may slow down or stop until they recover; the clock keeps running.',
+        'Cool down by walking slowly for about a minute. Record heart rate and symptoms if your protocol calls for it.'] },
+    mwt: { tab:'6MWT', name:'6-minute walk test', unit:'m', kind:'mwt',
+      protocol:[
+        'Flat, hard corridor with a marked lap. 30 m is standard; shorter laps are common in small spaces. Put a cone at each end and a chair near the turnaround.',
+        'Patient rests seated before the test. Record resting heart rate, SpO2 and dyspnea (0 to 10) if your protocol uses them.',
+        'Say: "Walk as far as you can in 6 minutes, back and forth around the cones. You may slow down, stop and rest, and lean on the wall if you need to. Start again as soon as you are able."',
+        'Do not walk with the patient unless safety requires it. Use only the standard encouragement lines shown during the test. The clock keeps running during any rest.',
+        'At 6:00 say "Stop." Mark the spot, then measure the final partial lap and record post-test vital signs.',
+        'Stop the test for chest pain, intolerable breathlessness, leg cramps, staggering, heavy sweating or a pale, ashen appearance.'] },
+    ctsib: { tab:'mCTSIB', name:'Modified CTSIB (mCTSIB)', unit:'s', kind:'ctsib',
+      protocol:[
+        'Four conditions, up to 30 s each, with up to three trials per condition. Patient stands with feet together and arms at the sides.',
+        'Condition 1: eyes open, firm surface. Condition 2: eyes closed, firm surface. Condition 3: eyes open, foam. Condition 4: eyes closed, foam.',
+        'Use a medium-density foam pad for conditions 3 and 4. Stand close with a gait belt.',
+        'End a trial if the patient opens their eyes in an eyes-closed condition, raises their arms from their sides, or loses balance by stepping or needing hands-on help.',
+        'Tap a trial cell below, run the stopwatch, and the time fills in when you stop it or it reaches 30 s. You can also type a time.'] },
+    sls: { tab:'Single leg', name:'Single limb stance (one-leg stance)', unit:'s', kind:'sls',
+      protocol:[
+        'Patient stands barefoot on a firm surface with arms crossed over the chest, near a wall or support for safety. Eyes open: they focus on a spot on the wall at eye level.',
+        'Patient lifts one foot so it is near but not touching the ankle of the stance leg. Time starts when the foot leaves the floor.',
+        'Eyes closed: the patient closes their eyes after focusing and the same steps follow.',
+        'Stop the clock if the arms uncross, the raised foot moves toward or away from the stance leg or touches the floor, the stance foot shifts, an eyes-closed trial opens the eyes, or the time limit is reached (45 s in the normative study; 30 s is also common).',
+        'Three trials for each leg and condition, with rest between trials to avoid fatigue. The best trial is used. Pick the stopwatch limit that matches your protocol and use it consistently.',
+        'Use a gait belt and guard closely, especially with eyes closed.'] },
+    fsb: { tab:'4-Stage', name:'4-Stage Balance Test', unit:'stages', kind:'fsb',
+      protocol:[
+        'Equipment: a stopwatch. Four standing positions get progressively harder. The patient does not use an assistive device and keeps their eyes open.',
+        'Describe and demonstrate each position. Stand next to the patient, hold their arm and help them into the correct foot position. When they are steady, let go but stay ready to catch them.',
+        'Say: "Try to stand in each position for 10 seconds. You can hold your arms out or move your body to help keep your balance, but do not move your feet. Hold this position until I tell you to stop." Say "Ready, begin," start timing, and say "Stop" at 10 seconds.',
+        'Positions: 1) feet side by side; 2) semi-tandem, instep of one foot touching the big toe of the other; 3) tandem, one foot in front of the other with heel touching toe; 4) stand on one foot.',
+        'If the patient holds a position for 10 seconds without moving the feet or needing support, go on to the next. If not, stop the test.',
+        'Not holding the tandem stance for 10 seconds indicates increased fall risk (CDC STEADI).',
+        'Use a gait belt and guard closely.'] },
+    fsst: { tab:'4-Square', name:'Four Square Step Test (FSST)', unit:'s', kind:'watch',
+      protocol:[
+        'Equipment: stopwatch and four canes (about 90 cm) laid flat in a cross to form four squares. Strips of tape can substitute.',
+        'Patient stands in square 1 facing square 2, in usual footwear with any usual device. Demonstrate the sequence, then allow one practice trial.',
+        'Say: "Step as fast as you can into each square in this order: 2, 3, 4, 1, 4, 3, 2, 1, without touching the canes. Both feet must touch the floor in each square. If you can, face forward the whole time."',
+        'Start the clock when the first foot touches the floor in square 2. Stop it when the second foot touches the floor back in square 1.',
+        'Time two successful trials; the faster time is the score. If the sequence is done incorrectly, balance is lost or a cane is touched, press Redo without saving and repeat. If the patient cannot face forward, score the trial and note it under extra observations.',
+        'Guard closely; the canes are a trip risk.'] },
+    abc: { tab:'ABC', name:'Activities-specific Balance Confidence (ABC) Scale', unit:'%', kind:'qnr', qtype:'pct', items:ABC_ITEMS,
+      stem:'How confident are you that you will not lose your balance or become unsteady when you\u2026',
+      protocol:[
+        'Sixteen activities. The patient rates their confidence that they will not lose balance or become unsteady, from 0% (no confidence) to 100% (completely confident), in steps of 10%.',
+        'It can be read aloud or completed by the patient. Check that they understand the instructions and ask about any item they find hard to answer.',
+        'If the patient gives different ratings for the up and down parts of items 2, 9, 11, 14 or 15, record the lower rating.',
+        'The score is the average of the 16 ratings (total divided by 16).',
+        'Items are condensed from the ABC Scale (Powell and Myers 1995). Check the original for the exact wording and terms of use.'] },
+    fesi: { tab:'FES-I', name:'Falls Efficacy Scale-International (FES-I)', unit:'/ 64', kind:'qnr', qtype:'lik4', items:FESI_ITEMS,
+      stem:'How concerned are you about the possibility of falling when you do each of these activities?',
+      protocol:[
+        'Sixteen activities rated 1 (not at all concerned), 2 (somewhat concerned), 3 (fairly concerned) or 4 (very concerned). The total ranges from 16 to 64, and a higher score means more concern about falling.',
+        'Say: "Please answer thinking about how you usually do the activity. If you do not currently do it, answer how concerned you think you would be if you did."',
+        'Items are condensed from the FES-I (Yardley et al. 2005). Check the FES-I website (sites.manchester.ac.uk/fes-i) for the exact wording and terms of use.'] },
+    sfesi: { tab:'Short FES-I', name:'Short Falls Efficacy Scale-International (Short FES-I)', unit:'/ 28', kind:'qnr', qtype:'lik4', items:SFESI_ITEMS,
+      stem:'How concerned are you about the possibility of falling when you do each of these activities?',
+      protocol:[
+        'Seven activities (a subset of the FES-I) rated 1 (not at all concerned), 2 (somewhat concerned), 3 (fairly concerned) or 4 (very concerned). The total ranges from 7 to 28, and a higher score means more concern about falling.',
+        'Say: "Please answer thinking about how you usually do the activity. If you do not currently do it, answer how concerned you think you would be if you did."',
+        'Items are condensed from the Short FES-I (Kempen et al. 2008). Check the FES-I website (sites.manchester.ac.uk/fes-i) for the exact wording and terms of use.'] },
+    fab: { tab:'FAB', name:'Fullerton Advanced Balance (FAB) scale', unit:'/ 40', kind:'fab',
+      protocol:[
+        'Ten items, each scored 0 to 4 (maximum 40). Designed for higher-functioning, community-dwelling older adults.',
+        'Equipment: stopwatch, medium-density foam balance pad, 6 in (15 cm) bench, pencil, a line or tape for tandem walking, gait belt.',
+        'Pick the description that best matches each performance. Scoring definitions are condensed from the CSU Fullerton FAB scoring form (revised 2008); check the official form for the full wording.',
+        'Eyes-closed, foam, jump and pull items carry more fall risk. Guard closely and stop if the patient is unsafe.'] },
+    bb: { tab:'Brief-BEST', name:'Brief-BESTest', unit:'/ 24', kind:'bb',
+      protocol:[
+        'Eight scored items, each 0 to 3 (maximum 24). The one-leg and lateral stepping items are scored on each side.',
+        'The Brief-BESTest scoring form may not be reproduced without the authors\u2019 permission, so the scoring descriptions are not shown here. Score each item from your copy of the form (Padgett et al., Phys Ther 2012), then tap the score.',
+        'Equipment: stopwatch, foam pad, chair for the TUG, a ruler or tape for the reach item, gait belt.',
+        'Guard closely during the eyes-closed, one-leg and push-and-release items.'] },
+    owd: { tab:'OWD', name:'Occiput-to-wall distance', unit:'cm', kind:'measure', mUnit:'cm', mStep:'0.1', mLabel:'distance in cm',
+      protocol:[
+        'Patient stands with heels, buttocks and upper back against a wall, as tall and straight as they can, looking straight ahead with the chin level.',
+        'Do not force the head back or tilt the chin up. If the patient cannot get into this position, record that in extra observations.',
+        'Measure the horizontal distance from the back of the head (occiput) to the wall with a ruler or tape. 0 cm means the head touches the wall.',
+        'Take three measurements and the mean is used.'] },
+    rpd: { tab:'Rib-pelvic', name:'Rib-pelvic distance', unit:'fingerbreadths', kind:'measure', mUnit:'fingerbreadths', mStep:'0.5', mLabel:'fingerbreadths', sides:['Right side','Left side'],
+      protocol:[
+        'Patient stands relaxed and upright. Stand behind them.',
+        'Place your fingers in the space between the lowest rib and the top of the pelvis (iliac crest), in the mid-axillary line along the side of the trunk.',
+        'Count how many fingerbreadths fit in that space, to the nearest half. Enter one value for each side.',
+        'The smallest value is used. A distance of 2 fingerbreadths or less is a positive screen for a vertebral fracture, most likely lumbar, in some studies. It is a screening sign, not a diagnosis.'] },
+    bs: { tab:'Back scratch', name:'Back scratch test', unit:'in', kind:'measure', mUnit:'in', mStep:'0.5', mLabel:'distance in inches', signed:true, signLabels:['Short of touching (\u2212)','Overlap (+)'],
+      protocol:[
+        'Patient stands. One hand goes over the same-side shoulder and reaches down the middle of the back, palm toward the body and fingers down.',
+        'The other arm goes behind the back, palm out and fingers up, reaching up as far as possible. The goal is for the middle fingers to touch or overlap.',
+        'Do not let the patient grab the fingers or pull. Measure the distance between the middle fingertips to the nearest half inch.',
+        'Score negative if the fingers do not meet, 0 if the fingertips just touch, and positive if they overlap.',
+        'Allow practice to find the better side, then take two test trials on that side. The best score is used.'] },
+    csr: { tab:'Sit & reach', name:'Chair sit-and-reach test', unit:'in', kind:'measure', mUnit:'in', mStep:'0.5', mLabel:'distance in inches', signed:true, signLabels:['Short of toes (\u2212)','Past toes (+)'],
+      protocol:[
+        'Firm chair about 17 in (44 cm) high, placed against a wall for safety. Patient sits at the front edge.',
+        'One foot is flat on the floor with the knee bent. The other leg is extended straight with the heel on the floor and the ankle at 90 degrees.',
+        'With hands overlapped and middle fingers even, the patient slowly bends forward from the hip, sliding the hands down the extended leg toward the toes, and holds for 2 seconds. No bouncing, and the knee stays straight.',
+        'Measure from the fingertips to the toes to the nearest half inch: 0 at the toes, negative if short, positive if past.',
+        'Allow practice to find the better leg, then take two test trials. The best score is used.'] },
+    mtbr: { tab:'mTBR', name:'Modified total body rotation (mTBR)', unit:'in', kind:'measure', mUnit:'in', mStep:'0.1', mLabel:'distance reached in inches', sides:['Toward right','Toward left'],
+      protocol:[
+        'Equipment: two measuring tapes fixed to the wall at shoulder height, running in opposite directions with their zero points together at the midpoint. Mark that zero point with a line on the floor.',
+        'Patient stands with the toes touching the floor mark, far enough from the wall that when the outside arm reaches across the body, the fingertips only just touch the wall.',
+        'Patient reaches the outside arm (the one away from the wall) across the body at shoulder height, palm down.',
+        'Patient rotates the trunk toward the wall and reaches behind as far as possible without moving the feet. Read the distance along the tape.',
+        'Patient turns around and repeats in the opposite direction. No practice trials are given.',
+        'Record the score for each direction. The higher of the two is the test score, and that side is the preferred side.'] },
+    fga: { tab:'FGA', name:'Functional Gait Assessment (FGA)', unit:'/ 30', kind:'rubric', max:3, items:FGA_ITEMS,
+      protocol:[
+        'Ten gait tasks, each scored 0 to 3 (maximum 30). Equipment: a 6 m (20 ft) walkway marked 30 cm (12 in) wide, shoebox, stairs, stopwatch, gait belt.',
+        'Scoring definitions are condensed from the Wrisley et al. (Phys Ther 2004) appendix. Check the form for the full wording and distances.',
+        'Grading rule: the published appendix says to mark the highest category that applies, while the DGI form says the lowest. Follow your clinic\u2019s convention and use it consistently.',
+        'Items that mention an assistive device are scored on its use. For other items, the patient is tested without the device.',
+        'Guard closely, especially for eyes-closed, backward and stair items.'] },
+    dgi: { tab:'DGI', name:'Dynamic Gait Index (DGI)', unit:'/ 24', kind:'rubric', max:3, items:DGI_ITEMS,
+      protocol:[
+        'Eight gait tasks, each scored 0 to 3 (maximum 24). Equipment: a 20 ft walkway about 15 in wide, shoebox, two cones, stairs, stopwatch, gait belt.',
+        'Scoring definitions are condensed from the Dynamic Gait Index form (Shumway-Cook and Woollacott; Herdman). Check the form for the full wording.',
+        'Grading rule on the form: mark the lowest category that applies.',
+        'Guard closely, especially for head turns, obstacles and stairs.'] },
+    berg: { tab:'Berg', name:'Berg Balance Scale (BBS)', unit:'/ 56', kind:'rubric', max:4, items:BERG_ITEMS, cd:[30,60,120], cdv:'hold',
+      protocol:[
+        'Fourteen items, each scored 0 to 4 (maximum 56). Equipment: stopwatch, ruler or markers at 2, 5 and 10 inches, a chair with armrests and one without, a footstool or step, and a 15 ft walkway.',
+        'Scoring definitions are condensed from the Berg Balance Scale form (Berg et al. 1992). Check the form for the full wording.',
+        'Grading rule on the form: record the lowest category that applies. Points are deducted when time or distance is not met, supervision is needed, or the patient touches an external support or is assisted.',
+        'Leave the choice of leg to stand on and how far to reach to the patient. Poor judgment lowers the score.',
+        'Guard closely, especially for eyes-closed, feet-together, turning and one-leg items.'] },
+    fist: { tab:'FIST', name:'Function in Sitting Test (FIST)', unit:'/ 56', kind:'rubric', max:4, items:FIST_ITEMS, cd:[30], cdv:'hold',
+      protocol:[
+        'Fourteen sitting tasks, each scored 0 to 4 with one shared scoring key (maximum 56). Developed for adults with sitting balance problems after stroke.',
+        'Starting position: sitting on the edge of a surface with half of the femur supported and the hips and knees at 90 degrees. A step or stool may support the feet; record if one is used.',
+        'Equipment: tape measure (for the 2 inch scoots and as a light object to pick up), stopwatch, a firm surface of a suitable height.',
+        'Items are ordered by difficulty, so perform them in order. The scoring key is condensed from the FIST score sheet (Gorman et al. 2010); check the sheet for the full wording.',
+        'Guard closely for every item, especially the nudges and reaches.'] }
+  };
+  var FAB_ITEMS = [
+    { n:'Stand with feet together, eyes closed', timed:true, cue:'Feet together, arms folded, eyes closed. Timed up to 30 s.', d:[
+      'Cannot get into the correct position independently',
+      'Gets into position but cannot hold it, or keep eyes closed, for more than 10 s',
+      'Holds with eyes closed for more than 10 s but under 30 s',
+      'Holds with eyes closed for 30 s but needs close supervision',
+      'Holds with eyes closed for 30 s safely'] },
+    { n:'Reach forward to retrieve an object', cue:'Reach forward with an outstretched arm to retrieve a pencil held at shoulder height.', d:[
+      'Cannot reach the pencil, even with more than two steps',
+      'Reaches the pencil but takes two steps',
+      'Reaches the pencil but takes one step',
+      'Reaches without moving the feet but needs supervision',
+      'Reaches safely and independently without moving the feet'] },
+    { n:'Turn 360 degrees', cue:'Full turn in the right and left directions. One score covers both directions.', d:[
+      'Needs hands-on assistance',
+      'Needs close supervision or verbal cueing',
+      'Completes the turns but takes more than four steps in both directions',
+      'Takes more than four steps in one direction only',
+      'Completes the turns safely in four steps or fewer in both directions'] },
+    { n:'Step up onto and over a bench', cue:'6 in (15 cm) bench, stepping up and over in both directions. One score covers both directions.', d:[
+      'Cannot step onto the bench without losing balance or hands-on help',
+      'Trailing leg touches the bench or swings around it in both directions',
+      'Trailing leg touches the bench or swings around it in one direction',
+      'Completes both directions correctly but needs close supervision in one or both',
+      'Completes both directions correctly, safely and independently'] },
+    { n:'Tandem walk', cue:'Heel-to-toe walk for 10 steps. Count the interruptions.', d:[
+      'Cannot complete 10 steps independently',
+      'Completes 10 steps with more than 5 interruptions',
+      'Completes 10 steps with 3 to 5 interruptions',
+      'Completes 10 steps with 1 to 2 interruptions',
+      'Completes 10 steps independently with no interruptions'] },
+    { n:'Stand on one leg', timed:true, cue:'Timed up to 20 s.', d:[
+      'Cannot try, or needs help to prevent a fall',
+      'Lifts the leg independently but holds 5 s or less',
+      'Holds more than 5 s but under 12 s',
+      'Holds 12 s or more but under 20 s',
+      'Holds the full 20 s'] },
+    { n:'Stand on foam, eyes closed', timed:true, cue:'Medium-density foam pad, eyes closed. Timed up to 20 s.', d:[
+      'Cannot step onto the foam or stand independently with eyes open',
+      'Stands on the foam independently but cannot or will not close eyes',
+      'Stands with eyes closed for 10 s or less',
+      'Stands with eyes closed for more than 10 s but under 20 s',
+      'Stands with eyes closed for the full 20 s'] },
+    { n:'Two-footed jump', cue:'Two-footed jump forward. Do not introduce this item if the step-up was not performed safely or the jump is contraindicated; score 0 and move on.', d:[
+      'Unwilling or unable to attempt, or one or both feet do not leave the floor',
+      'Initiates the jump but one foot leaves or lands before the other',
+      'Two-footed jump, but not farther than the length of their own feet',
+      'Two-footed jump farther than the length of their own feet',
+      'Two-footed jump farther than twice the length of their own feet'] },
+    { n:'Walk with head turns', cue:'Walk 10 steps with 30 degree head turns at the established pace.', d:[
+      'Cannot walk 10 steps independently while keeping up the head turns',
+      'Walks 10 steps but cannot complete the required number of head turns at the pace',
+      'Walks 10 steps but veers off a straight line during the head turns',
+      'Straight line with the required turns, but head turns are under 30 degrees in one or both directions',
+      'Straight line with the required number of 30 degree head turns at the pace'] },
+    { n:'Reactive postural control', cue:'Examiner applies a controlled backward pull. Stand behind with a gait belt, and follow the official instructions for force and hand placement.', d:[
+      'Cannot stay upright, makes no attempt to step, needs hands-on help to recover',
+      'Takes two or more steps and needs hands-on help to recover',
+      'Takes more than two steps but recovers independently',
+      'Takes two steps and recovers independently',
+      'Recovers independently with only one step'] }
+  ];
+  var BB_ITEMS = [
+    { n:'Hip/trunk lateral strength', timed:true, cue:'Side-lying hip abduction hold, up to 10 s, keeping the trunk vertical. One score covers both hips.' },
+    { n:'Functional reach forward', cue:'Arms forward, reach as far as possible without lifting the heels or rotating the trunk. Record the best reach.' },
+    { n:'Stand on one leg, left', timed:true, cue:'Hands on hips, up to 30 s. Test the left side.' },
+    { n:'Stand on one leg, right', timed:true, cue:'Hands on hips, up to 30 s. Test the right side.' },
+    { n:'Compensatory stepping, lateral, left', cue:'Feet nearly together, lean into the examiner\u2019s hands, which are then released. Observe the stepping response on the left side.' },
+    { n:'Compensatory stepping, lateral, right', cue:'Same task, observing the stepping response on the right side.' },
+    { n:'Stand on foam, eyes closed', timed:true, cue:'Hands on hips, eyes closed on a foam pad, timed up to 30 s.' },
+    { n:'Timed Up and Go', cue:'Timed TUG. Use the TUG tab to time it.' }
+  ];
+  var BB_SECTIONS = [
+    { n:'Biomechanical', items:[0], max:3 }, { n:'Stability limits', items:[1], max:3 },
+    { n:'Anticipatory (one leg)', items:[2,3], max:6 }, { n:'Reactive (lateral stepping)', items:[4,5], max:6 },
+    { n:'Sensory orientation', items:[6], max:3 }, { n:'Gait (TUG)', items:[7], max:3 }
+  ];
+  var CT_NAMES = ['1. Eyes open, firm surface','2. Eyes closed, firm surface','3. Eyes open, foam','4. Eyes closed, foam'];
+  var MIN_CUES = { 1:'You are doing well. 5 minutes to go.', 2:'Keep up the good work. 4 minutes to go.', 3:'You are doing well. You are halfway done.', 4:'Keep up the good work. Only 2 minutes left.', 5:'You are doing well. Only 1 minute to go.' };
+  var FINAL_CUE = 'In a moment I will tell you to stop. When I do, stop right where you are and I will come to you.';
+
+  function newFab(){ var a=[]; for (var i=0;i<10;i++) a.push({a:null}); return a; }
+  function newRub(n){ var a=[]; for (var i=0;i<n;i++) a.push({a:null}); return a; }
+  function newBB(){ var a=[]; for (var i=0;i<8;i++) a.push({a:null}); return a; }
+  function newCt(){ return [[null,null,null],[null,null,null],[null,null,null],[null,null,null]]; }
+  function newForm(){ return { lap:'30', hr0:'', hr1:'', sp0:'', sp1:'', b0:'', b1:'' }; }
+  var GROUPS = [
+    { n:'Functional mobility', keys:['tug','tugcog','tugman'] },
+    { n:'Gait', keys:['gait','fga','dgi'] },
+    { n:'Lower-extremity strength and power', keys:['sts','cst'] },
+    { n:'Aerobic endurance', keys:['step2','mwt'] },
+    { n:'Balance', subs:[
+      { n:'Screens', keys:['fsb','sls'] },
+      { n:'Static', keys:['ctsib','berg','fist'] },
+      { n:'Dynamic', keys:['fsst','fab','bb'] } ] },
+    { n:'Balance confidence / fear of falling', keys:['abc','fesi','sfesi'] },
+    { n:'Posture and flexibility', keys:['owd','rpd','bs','csr','mtbr'] }
+  ];
+  var ORDER = [];
+  GROUPS.forEach(function(g){ (g.subs || [g]).forEach(function(b){ b.keys.forEach(function(k){ ORDER.push(k); }); }); });
+  function todayStr(){ var d = new Date(), p = function(n){ return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()); }
+  function blankData(){
+    return { age:'', sex:'', height:'', weight:'', device:'', gaitDist:4, code:'', visit:todayStr(),
+      tug:[], tugcog:[], tugman:[], gait:[], sts:[], cst:[], step2:[], owd:[], rpd:[], bs:[], csr:[], mtbr:[], fsst:[], fsb:[null,null,null,null],
+      abc:newRub(16), fesi:newRub(16), sfesi:newRub(7), fab:newFab(), fga:newRub(10), dgi:newRub(8), berg:newRub(14), fist:newRub(14), bb:newBB(), ctsib:newCt(), sls:newCt(), mwt:null, mwtForm:newForm() };
+  }
+  var SNAP_KEYS = Object.keys(blankData());
+  var S = Object.assign(blankData(), { active:'tug', gaitMode:'comfortable', cogNum:0, ctSel:[0,0], slsSel:[0,0], fsbSel:0, side:{}, sign:{} });
+  var F = { id:0, t0:0, dur:0 };
+  var M = { mode:'idle', t0:0, raf:0, laps:0, rests:0, lastMin:0, warned:false };
+  var T = { mode:'idle', t0:0, raf:0, pending:null, count:0, audio:null, wake:null };
+
+  var $ = function(s){ return document.querySelector(s); };
+  function mean(a){ var s=0; for (var i=0;i<a.length;i++) s+=a[i]; return s/a.length; }
+  function r1(x){ return (Math.round(x*10)/10).toFixed(1); }
+  function r2(x){ return (Math.round(x*100)/100).toFixed(2); }
+  function fmtLeft(left, dur){
+    if (dur >= 60) { var s = Math.ceil(left - 1e-6); if (s < 0) s = 0; return Math.floor(s/60) + ':' + ('0' + (s%60)).slice(-2); }
+    return left.toFixed(1);
+  }
+
+  /* ---------- sound, vibration, wake lock ---------- */
+  function beep(freq, ms){
+    try {
+      if (!T.audio) return;
+      var o = T.audio.createOscillator(), g = T.audio.createGain();
+      o.frequency.value = freq; g.gain.value = 0.2;
+      o.connect(g); g.connect(T.audio.destination);
+      o.start(); o.stop(T.audio.currentTime + ms/1000);
+    } catch(e){}
+  }
+  function buzz(p){ try { if (navigator.vibrate) navigator.vibrate(p); } catch(e){} }
+  function prepAudio(){
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC && !T.audio) T.audio = new AC();
+      if (T.audio && T.audio.state === 'suspended') T.audio.resume();
+    } catch(e){}
+  }
+  function lockScreen(on){
+    try {
+      if (on && navigator.wakeLock) { navigator.wakeLock.request('screen').then(function(l){ T.wake = l; }).catch(function(){}); }
+      else if (!on && T.wake) { T.wake.release(); T.wake = null; }
+    } catch(e){}
+  }
+
+  /* ---------- main stopwatch / countdown ---------- */
+  function elapsed(){ return (performance.now() - T.t0) / 1000; }
+  function setDisplay(txt){ var d = $('#disp'); if (d) d.textContent = txt; }
+  function tick(){
+    if (T.mode !== 'running') return;
+    var e = elapsed(), c = TESTS[S.active];
+    if (c.kind === 'count') {
+      var left = Math.max(0, c.dur - e);
+      setDisplay(fmtLeft(left, c.dur));
+      if (left <= 0) { finishCount(); return; }
+    } else {
+      setDisplay(e.toFixed(1));
+    }
+    T.raf = requestAnimationFrame(tick);
+  }
+  function start(){
+    prepAudio(); lockScreen(true);
+    T.count = 0; T.pending = null; T.mode = 'running'; T.t0 = performance.now();
+    beep(880, 150); buzz(40);
+    renderPanel(); tick();
+  }
+  function stopWatch(){
+    var e = elapsed();
+    cancelAnimationFrame(T.raf); lockScreen(false);
+    T.mode = 'stopped'; T.pending = Math.round(e * 100) / 100;
+    beep(660, 150); buzz(40);
+    renderPanel();
+  }
+  function finishCount(){
+    cancelAnimationFrame(T.raf); lockScreen(false);
+    T.mode = 'stopped'; T.pending = T.count;
+    beep(520, 500); buzz([200,100,200]);
+    renderPanel();
+  }
+  function resetTimer(){ cancelAnimationFrame(T.raf); lockScreen(false); T.mode='idle'; T.pending=null; T.count=0; }
+
+  /* ---------- hold stopwatch (FAB, Brief-BESTest, mCTSIB) ---------- */
+  function cdStop(){ if (F.id) { clearInterval(F.id); F.id = 0; } lockScreen(false); }
+  function cdTick(){
+    var e = (performance.now() - F.t0) / 1000, el = $('#cddisp');
+    if (e >= F.dur) {
+      cdStop(); if (el) el.textContent = F.dur.toFixed(1);
+      beep(520, 500); buzz([200,100,200]);
+      var st = $('#cdstatus'); if (st) st.textContent = 'Full ' + F.dur + ' s reached.';
+      onHoldDone(F.dur); return;
+    }
+    if (el) el.textContent = e.toFixed(1);
+  }
+  function cdStart(d){
+    prepAudio(); cdStop(); lockScreen(true); F.dur = d; F.t0 = performance.now(); beep(880, 150); buzz(40);
+    var st = $('#cdstatus'); if (st) st.textContent = 'Timing up to ' + d + ' s\u2026';
+    F.id = setInterval(cdTick, 100); cdTick();
+  }
+  function cdHtml(presets, variant){
+    var h = '<div class="cddisp" id="cddisp" aria-live="off">0.0</div>';
+    h += '<div class="cdrow" style="grid-template-columns:repeat(' + (presets.length + 1) + ',1fr)">';
+    presets.forEach(function(p){ h += '<button type="button" data-cd="' + p + '">' + (variant === 'timer' ? 'Start timer' : 'Start ' + (p >= 60 ? (p / 60) + ' min' : p + ' s') + ' hold') + '</button>'; });
+    h += '<button type="button" id="cdstop">Stop</button></div>';
+    h += '<div class="status" style="text-align:center" id="cdstatus">' + (variant === 'timer'
+      ? 'Stopwatch for timed walks and turns. Stop it when the patient finishes; it beeps at ' + presets[0] + ' s.'
+      : 'Stopwatch for held positions. Stop it when the patient loses the position; it beeps at the time limit.') + '</div>';
+    return h;
+  }
+  function onHoldDone(sec){ if (S.active === 'ctsib') ctRecord(sec); else if (S.active === 'sls') slsRecord(sec); else if (S.active === 'fsb') fsbRecord(sec); }
+
+  /* ---------- 6-minute walk timer ---------- */
+  function lapLen(){ var v = parseFloat(S.mwtForm.lap); return v > 0 ? v : 30; }
+  function mReset(){ cancelAnimationFrame(M.raf); lockScreen(false); M.mode='idle'; M.laps=0; M.rests=0; M.lastMin=0; M.warned=false; }
+  function setCue(t){ var e = $('#mcue'); if (e) e.textContent = t; }
+  function mStats(){ var e = $('#mstats'); if (e) e.textContent = 'Laps: ' + M.laps + ' (' + Math.round(M.laps * lapLen()) + ' m)' + (M.rests ? '   Rests: ' + M.rests : ''); }
+  function mTick(){
+    if (M.mode !== 'running') return;
+    var e = (performance.now() - M.t0) / 1000, left = Math.max(0, 360 - e), d = $('#mdisp');
+    if (d) d.textContent = fmtLeft(left, 360);
+    var mn = Math.floor(e / 60);
+    if (mn > M.lastMin && mn <= 5) { M.lastMin = mn; beep(700, 200); buzz(60); setCue(MIN_CUES[mn]); }
+    if (left <= 15 && !M.warned) { M.warned = true; setCue(FINAL_CUE); }
+    if (left <= 0) { mFinish(); return; }
+    M.raf = requestAnimationFrame(mTick);
+  }
+  function mStart(){
+    prepAudio(); lockScreen(true);
+    M.mode = 'running'; M.t0 = performance.now(); M.laps = 0; M.rests = 0; M.lastMin = 0; M.warned = false;
+    beep(880, 200); buzz(60);
+    renderMwt(); renderTabs(); mTick();
+  }
+  function mFinish(){
+    cancelAnimationFrame(M.raf); lockScreen(false); M.mode = 'done';
+    beep(520, 700); buzz([300,100,300]);
+    renderMwt(); renderTabs();
+  }
+
+  /* ---------- reference data ---------- */
+  var CST_NORMS = {
+    F: [[60,64,12],[65,69,11],[70,74,10],[75,79,10],[80,84,9],[85,89,8],[90,94,4]],
+    M: [[60,64,14],[65,69,12],[70,74,12],[75,79,11],[80,84,10],[85,89,8],[90,94,7]]
+  };
+  var STEP_NORMS = {
+    F: [[75,107],[73,107],[68,101],[68,100],[60,91],[55,85],[44,72]],
+    M: [[87,115],[86,116],[80,110],[73,109],[71,103],[59,91],[52,86]]
+  };
+  var MWT_YARDS = {
+    F: [[545,660],[500,635],[480,615],[430,585],[385,540],[340,510],[275,440]],
+    M: [[610,735],[560,700],[545,680],[470,640],[445,605],[380,570],[305,500]]
+  };
+  var CSR_NORMS = {
+    F: [[-0.5,5.0],[-0.5,4.5],[-1.0,4.0],[-1.5,3.5],[-2.0,3.0],[-2.5,2.5],[-4.5,1.0]],
+    M: [[-2.5,4.0],[-3.0,3.0],[-3.5,2.5],[-4.0,2.0],[-5.5,1.5],[-5.5,0.5],[-6.5,-0.5]]
+  };
+  var BS_NORMS = {
+    F: [[-3.0,1.5],[-3.5,1.5],[-4.0,1.0],[-5.0,0.5],[-5.5,0.0],[-7.0,-1.0],[-8.0,-1.0]],
+    M: [[-6.5,0.0],[-7.5,-1.0],[-8.0,-1.0],[-9.0,-2.0],[-9.5,-2.0],[-10.0,-3.0],[-10.5,-4.0]]
+  };
+  var MTBR_NORMS = { a:[28.5,26.9,25.1,22.1], b:[28.5,26.1,23.6,20.3], c:[26.0,22.3,20.1,18.0], all:[28.0,25.9,23.0,19.5] };
+  var MTBR_LABELS = ['Excellent (80th percentile or higher)','Good (60th to 79th percentile)','Average (40th to 59th percentile)','Fair (20th to 39th percentile)','Below the 20th percentile'];
+  function sgn(v){ return (v > 0 ? '+' : '') + (Math.round(v*2)/2).toFixed(1); }
+  function band(age){ return Math.min(6, Math.max(0, Math.floor((age - 60) / 5))); }
+  function bandLabel(age){ var b = band(age); return (60 + b*5) + ' to ' + (64 + b*5); }
+  function stsMean(age){ if (age>=60&&age<=69) return 11.4; if (age>=70&&age<=79) return 12.6; if (age>=80&&age<=89) return 14.8; return null; }
+
+  /* ---------- results ---------- */
+  function fabResult(){
+    var sum = 0, scored = 0, any = false;
+    FAB_ITEMS.forEach(function(it, i){
+      var v = S.fab[i].a;
+      if (v !== null) { any = true; sum += v; scored++; }
+    });
+    if (!any) return null;
+    var full = scored === 10;
+    return { n:1, val: sum + ' / 40' + (full ? '' : ' (partial)'), flag: full && sum <= 25, nonorm: !full, tag:'Incomplete',
+      text: full ? (sum <= 25 ? '25 or below, the long-form cut-off for increased fall risk (CSU Fullerton scoring form).' : 'Above the 25 point fall-risk cut-off (CSU Fullerton scoring form).')
+                 : scored + ' of 10 items scored. Score all 10 items for an interpretable total.' };
+  }
+  function rubricResult(k){
+    var c = TESTS[k], n = c.items.length, sum = 0, scored = 0;
+    S[k].forEach(function(o){ if (o.a !== null) { sum += o.a; scored++; } });
+    if (!scored) return null;
+    var full = scored === n, mx = n * c.max, flag = false, nocut = false, txt;
+    if (!full) txt = scored + ' of ' + n + ' items scored. Score all ' + n + ' items for an interpretable total.';
+    else if (k === 'fga') { flag = sum <= 22; txt = flag ? '22 or below, the cut-off for fall risk in community-dwelling older adults (Wrisley & Kumar 2010).' : 'Above the 22 point fall-risk cut-off (Wrisley & Kumar 2010).'; }
+    else if (k === 'dgi') { flag = sum < 19; txt = sum < 19 ? 'Under 19, predictive of falls in older adults.' : sum > 22 ? 'Above 22, in the safe-ambulator range.' : '19 to 22: above the fall-prediction cut-off of 19 but not in the safe-ambulator range (above 22).'; }
+    else if (k === 'berg') {
+      flag = sum < 45;
+      var bandTxt = sum >= 41 ? 'low fall risk' : sum >= 21 ? 'medium fall risk' : 'high fall risk';
+      txt = (flag ? 'Under 45, associated with a greater risk of falling. ' : '45 or above. ') + 'Band: ' + bandTxt + ' (41 to 56 low, 21 to 40 medium, 0 to 20 high; Berg et al. 1992).';
+    }
+    else { nocut = true; txt = 'No single cut-off is applied. Compare with earlier scores (Gorman et al. 2010).'; }
+    return { n:1, val: sum + ' / ' + mx + (full ? '' : ' (partial)'), flag: full && flag, nonorm: !full || nocut, tag: full ? 'No cut-off' : 'Incomplete', text: txt };
+  }
+  function qResult(k){
+    var a = S[k], n = a.length, sum = 0, cnt = 0;
+    a.forEach(function(o){ if (o.a !== null) { sum += o.a; cnt++; } });
+    if (!cnt) return null;
+    if (cnt < n) return { n:1, val: cnt + ' of ' + n + ' answered', flag:false, nonorm:true, tag:'Incomplete', text: 'Answer all ' + n + ' items to get a score.' };
+    if (k === 'abc') {
+      var avg = sum / n, lvl = avg < 50 ? 'low' : avg <= 80 ? 'moderate' : 'high';
+      return { n:1, val: avg.toFixed(1) + '%', flag: avg < 67, pill: lvl === 'low' ? 'Low confidence' : lvl === 'moderate' ? 'Moderate confidence' : 'High confidence',
+        text: 'Average of the 16 ratings. ' + lvl.charAt(0).toUpperCase() + lvl.slice(1) + ' level of physical functioning (under 50% low, 50 to 80% moderate, over 80% high). ' +
+              (avg < 67 ? 'Under 67% marks older adults at risk for falling (Lajoie & Gallagher 2004).' : '67% or above, outside the at-risk range for falling (Lajoie & Gallagher 2004).') };
+    }
+    var cuts = k === 'fesi' ? [19, 27] : [8, 13], span = k === 'fesi' ? ['16 to 19','20 to 27','28 to 64'] : ['7 to 8','9 to 13','14 to 28'];
+    var li = sum <= cuts[0] ? 0 : sum <= cuts[1] ? 1 : 2, words = ['low','moderate','high'];
+    return { n:1, val: sum + ' / ' + (k === 'fesi' ? 64 : 28), flag: li === 2, pill: words[li].charAt(0).toUpperCase() + words[li].slice(1) + ' concern',
+      text: 'Concern about falling is ' + words[li] + ' (low ' + span[0] + ', moderate ' + span[1] + ', high ' + span[2] + '; Delbaere et al. 2010). Higher scores mean more concern.' };
+  }
+  var FSB_NAMES = ['Stage 1: feet side by side','Stage 2: semi-tandem','Stage 3: tandem (heel to toe)','Stage 4: one-legged stance'];
+  function fsbResult(){
+    var t = S.fsb;
+    if (t.every(function(x){ return x === null; })) return null;
+    var passed = 0, failedAt = -1, i;
+    for (i = 0; i < 4; i++) { if (t[i] !== null && t[i] >= 10) passed++; else break; }
+    for (i = 0; i < 4; i++) { if (t[i] === null) break; if (t[i] < 10) { failedAt = i; break; } }
+    var parts = [];
+    t.forEach(function(v, j){ if (v !== null) parts.push('stage ' + (j+1) + ' ' + r1(v) + ' s'); });
+    var flag = false, txt;
+    if (failedAt >= 0 && failedAt <= 2) {
+      flag = true;
+      txt = failedAt === 2 ? 'Could not hold the tandem stance for 10 s: increased risk of falling (CDC STEADI).'
+                           : 'Did not progress to the tandem stance because stage ' + (failedAt + 1) + ' was not held 10 s: increased risk of falling (CDC STEADI).';
+    } else if (passed >= 3) txt = 'Held the tandem stance for 10 s, so this test does not flag increased fall risk (CDC STEADI).';
+    else txt = 'Tandem stance not tested yet. Holding it for 10 s is the key cut-off (CDC STEADI).';
+    return { n:1, val: passed + ' of 4 stages held', flag: flag, nonorm: passed < 3 && failedAt < 0, tag:'Incomplete', text: 'Times: ' + parts.join(', ') + '. ' + txt };
+  }
+  var SLS_NAMES = ['Right leg, eyes open','Left leg, eyes open','Right leg, eyes closed','Left leg, eyes closed'];
+  function slsBest(row){ var v = row.filter(function(x){ return x !== null; }); return v.length ? Math.max.apply(null, v) : null; }
+  function slsResult(){
+    var rows = S.sls.map(slsBest);
+    if (rows.every(function(x){ return x === null; })) return null;
+    var age = parseInt(S.age, 10), ai = age >= 80 ? 5 : age >= 70 ? 4 : age >= 60 ? 3 : age >= 50 ? 2 : age >= 40 ? 1 : age >= 18 ? 0 : -1;
+    var EO = [44.7, 41.9, 41.2, 32.1, 21.5, 9.4], EC = [15.2, 12.7, 8.3, 4.4, 3.1, 1.9];
+    var LAB = ['18 to 39','40 to 49','50 to 59','60 to 69','70 to 79','80 and older'];
+    var vals = [], txt = [], flag = false, bestOpen = null, bestClosed = null;
+    [['Open', 0], ['Closed', 2]].forEach(function(c){
+      var p = [];
+      if (rows[c[1]] !== null) p.push('R ' + r1(rows[c[1]]));
+      if (rows[c[1] + 1] !== null) p.push('L ' + r1(rows[c[1] + 1]));
+      if (p.length) vals.push(c[0] + ' ' + p.join(' / '));
+      var b = [rows[c[1]], rows[c[1] + 1]].filter(function(x){ return x !== null; });
+      var mx = b.length ? Math.max.apply(null, b) : null;
+      if (c[1] === 0) { bestOpen = mx; if (b.some(function(x){ return x < 5; })) flag = true; } else bestClosed = mx;
+    });
+    if (bestOpen !== null) txt.push(flag ? 'Eyes open under 5 s on a leg is linked to about twice the risk of an injurious fall (Vellas 1997).' : 'Eyes open held 5 s or more on each tested leg (Vellas 1997 cut-off).');
+    if (ai >= 0) {
+      txt.push('Mean of the best of 3 trials for age ' + LAB[ai] + ': eyes open ' + EO[ai] + ' s, eyes closed ' + EC[ai] + ' s (Springer 2007).');
+      if (bestOpen !== null) txt.push('Best eyes open ' + r1(bestOpen) + ' s is ' + (bestOpen < EO[ai] ? 'below' : 'at or above') + ' that mean.');
+      if (bestClosed !== null) txt.push('Best eyes closed ' + r1(bestClosed) + ' s is ' + (bestClosed < EC[ai] ? 'below' : 'at or above') + ' that mean.');
+    } else txt.push('Enter age 18 or older to compare with age means.');
+    return { n:1, val: vals.join('; ') + ' s', flag: flag, text: txt.join(' ') };
+  }
+  function bbResult(){
+    var sum = 0, scored = 0, any = false;
+    S.bb.forEach(function(o){ if (o.a !== null) { any = true; sum += o.a; scored++; } });
+    if (!any) return null;
+    var secs = BB_SECTIONS.map(function(s){
+      var t = 0, done = true;
+      s.items.forEach(function(i){ if (S.bb[i].a === null) done = false; else t += S.bb[i].a; });
+      return s.n + ' ' + (done ? t : '\u2013') + '/' + s.max;
+    }).join(', ');
+    var full = scored === 8;
+    return { n:1, val: sum + ' / 24' + (full ? '' : ' (partial)'), flag:false, nonorm:true, tag: full ? 'No cut-off' : 'Incomplete',
+      text: (full ? '' : scored + ' of 8 items scored. ') + 'Sections: ' + secs + '. No single cut-off applies across populations, so compare with earlier scores.' };
+  }
+  function ctMeans(){ return S.ctsib.map(function(row){ var v = row.filter(function(x){ return x !== null; }); return v.length ? mean(v) : null; }); }
+  function ctsibResult(){
+    var m = ctMeans(), n = 0, sum = 0;
+    m.forEach(function(x){ if (x !== null) { n++; sum += x; } });
+    if (!n) return null;
+    var low = [];
+    m.forEach(function(x, i){ if (x !== null && x < 30) low.push(i + 1); });
+    var parts = m.map(function(x, i){ return (i+1) + ': ' + (x === null ? '\u2013' : r1(x) + ' s'); }).join(', ');
+    var txt = 'Condition means ' + parts + '.';
+    if (!low.length) txt += n === 4 ? ' Held 30 s in every condition.' : ' All tested conditions held for 30 s.';
+    else {
+      if (low.indexOf(2) >= 0) txt += ' Eyes closed on a firm surface under 30 s suggests reliance on vision rather than somatosensory input.';
+      if (low.indexOf(3) >= 0 || low.indexOf(4) >= 0) txt += ' Foam conditions under 30 s suggest the visual and/or vestibular systems are not holding balance well; condition 4 relies on vestibular input.';
+      if (low.length === 1 && low[0] === 4) txt += ' Foam with eyes closed is challenging for many older adults, so read it alongside the other conditions.';
+    }
+    return { n:1, val: n === 4 ? r1(sum) + ' / 120 s' : n + ' of 4 conditions', flag: low.length > 0, nonorm: n < 4 && !low.length, tag:'Incomplete', text: txt };
+  }
+  function mwtResult(){
+    var w = S.mwt; if (!w) return null;
+    var d = w.d, age = parseInt(S.age, 10), ht = parseFloat(S.height), wt = parseFloat(S.weight);
+    var parts = ['Average speed ' + r2(d / 360) + ' m/s.'], flag = false, haveNorm = false;
+    if (age >= 60 && age <= 94 && S.sex) {
+      var y = MWT_YARDS[S.sex][band(age)], lo = Math.round(y[0] * 0.9144), hi = Math.round(y[1] * 0.9144);
+      haveNorm = true;
+      parts.push('Middle 50% for age ' + bandLabel(age) + ' (Rikli & Jones): ' + lo + ' to ' + hi + ' m. ' + (d < lo ? 'Below that range.' : d > hi ? 'Above that range.' : 'Within that range.'));
+      if (d < lo) flag = true;
+    } else parts.push('Enter age (60 to 94) and sex for age norms.');
+    if (age && S.sex && ht > 0 && wt > 0) {
+      var pred, lln;
+      if (S.sex === 'M') { pred = 7.57*ht - 5.02*age - 1.76*wt - 309; lln = pred - 153; }
+      else { pred = 2.11*ht - 2.29*wt - 5.78*age + 667; lln = pred - 139; }
+      haveNorm = true;
+      parts.push('Predicted ' + Math.round(pred) + ' m (' + Math.round(d / pred * 100) + '%), lower limit of normal ' + Math.round(lln) + ' m (Enright & Sherrill 1998). ' + (d < lln ? 'Below the lower limit.' : 'Above the lower limit.'));
+      if (d < lln) flag = true;
+    }
+    var v = [];
+    if (w.hr0 || w.hr1) v.push('HR ' + (w.hr0 || '?') + ' to ' + (w.hr1 || '?'));
+    if (w.sp0 || w.sp1) v.push('SpO2 ' + (w.sp0 || '?') + ' to ' + (w.sp1 || '?') + '%');
+    if (w.b0 || w.b1) v.push('dyspnea ' + (w.b0 || '?') + ' to ' + (w.b1 || '?') + '/10');
+    if (v.length) parts.push('Vitals: ' + v.join(', ') + '.');
+    if (w.rests) parts.push(w.rests + ' rest' + (w.rests > 1 ? 's' : '') + ' taken.');
+    return { n:1, val: Math.round(d) + ' m', flag: flag, nonorm: !haveNorm, tag:'No norm', text: parts.join(' ') };
+  }
+  function result(k){
+    if (k === 'fab') return fabResult();
+    if (k === 'bb') return bbResult();
+    if (k === 'fga' || k === 'dgi' || k === 'berg' || k === 'fist') return rubricResult(k);
+    if (k === 'ctsib') return ctsibResult();
+    if (k === 'sls') return slsResult();
+    if (k === 'fsb') return fsbResult();
+    if (k === 'abc' || k === 'fesi' || k === 'sfesi') return qResult(k);
+    if (k === 'mwt') return mwtResult();
+    var a = S[k]; if (!a.length) return null;
+    var age = parseInt(S.age, 10);
+    if (k === 'tug') {
+      var m = mean(a.map(function(t){ return t.v; }));
+      return { val: r1(m) + ' s', n:a.length, flag: m >= 12,
+        text: m >= 12 ? 'At or above the 12 s fall-risk threshold (CDC STEADI).' : 'Below the 12 s fall-risk threshold (CDC STEADI).' };
+    }
+    if (k === 'tugcog' || k === 'tugman') {
+      var dm = mean(a.map(function(t){ return t.v; }));
+      var base = S.tug.length ? mean(S.tug.map(function(t){ return t.v; })) : null;
+      var out2 = { val: r1(dm) + ' s', n:a.length, flag:false, nonorm:true, tag:'Compare to TUG' };
+      if (base) {
+        var diff = dm - base, pct = diff / base * 100;
+        out2.text = 'Dual-task cost vs. standard TUG (' + r1(base) + ' s): ' + (diff>=0?'+':'') + r1(diff) + ' s (' + (pct>=0?'+':'') + Math.round(pct) + '%). No widely accepted cut-off; interpret as change from baseline.';
+      } else {
+        out2.text = 'Record the standard TUG to calculate the dual-task cost. No widely accepted cut-off.';
+      }
+      return out2;
+    }
+    if (k === 'gait') {
+      var cs = a.filter(function(t){ return t.mode !== 'fast'; }), fs = a.filter(function(t){ return t.mode === 'fast'; });
+      var spd = function(arr){ return mean(arr.map(function(t){ return t.d / t.v; })); };
+      var cSp = cs.length ? spd(cs) : null, fSp = fs.length ? spd(fs) : null;
+      var gp = [], gv = [], gfl = false;
+      if (cSp !== null) {
+        var bandTxt;
+        if (cSp < 0.4) bandTxt = 'Household ambulator range (under 0.4 m/s).';
+        else if (cSp < 0.8) bandTxt = 'Limited community ambulator range (0.4 to 0.8 m/s).';
+        else if (cSp < 1.0) bandTxt = 'Community ambulator range, but under 1.0 m/s is linked to higher risk of adverse outcomes.';
+        else bandTxt = '1.0 m/s or faster, above the common risk cut-off.';
+        gfl = cSp < 1.0; gv.push('Comfortable ' + r2(cSp) + ' m/s'); gp.push('Comfortable speed: ' + bandTxt);
+      }
+      if (fSp !== null) {
+        gv.push('Fast ' + r2(fSp) + ' m/s');
+        gp.push('Fast speed ' + r2(fSp) + ' m/s.' + (cSp !== null ? ' Gait speed reserve (fast minus comfortable): ' + (fSp - cSp >= 0 ? '+' : '') + r2(fSp - cSp) + ' m/s.' : ' No fast-speed cut-off is applied.'));
+      }
+      if (cs.length > 1 || fs.length > 1) gp.push('Speeds are means of the trials at each pace.');
+      return { val: gv.join(' / '), n:1, flag: gfl, nonorm: cSp === null, tag:'No cut-off', text: gp.join(' ') };
+    }
+    if (k === 'sts') {
+      var s = mean(a.map(function(t){ return t.v; }));
+      var txt, f = false;
+      if (s > 15) { txt = 'Over 15 s, associated with recurrent falls (Buatois 2008).'; f = true; }
+      else if (s > 12) { txt = 'Over 12 s, a fall-risk cut-off in some studies.'; f = true; }
+      else txt = 'At or under 12 s.';
+      var nm = stsMean(age);
+      if (nm) txt += ' Mean for age ' + (age<70?'60 to 69':age<80?'70 to 79':'80 to 89') + ' is about ' + nm + ' s (Bohannon 2006).';
+      return { val: r1(s) + ' s', n:a.length, flag: f, text: txt };
+    }
+    if (k === 'cst') {
+      var c = a[a.length-1].v;
+      var out = { val: c + ' stands', n:a.length, flag:false, text:'' };
+      if (!age || !S.sex) { out.text = 'Enter age and sex above to compare with age norms.'; out.nonorm = true; return out; }
+      if (age < 60 || age > 94) { out.text = 'Age norms cover 60 to 94.'; out.nonorm = true; return out; }
+      var rows = CST_NORMS[S.sex], cut = null;
+      for (var i=0;i<rows.length;i++) if (age>=rows[i][0] && age<=rows[i][1]) cut = rows[i][2];
+      out.flag = c < cut;
+      out.text = out.flag ? 'Below average for age and sex (under ' + cut + ' stands, CDC STEADI).'
+                          : 'At or above the below-average cut-off for age and sex (' + cut + ' stands).';
+      return out;
+    }
+    if (k === 'step2') {
+      var c2 = a[a.length-1].v;
+      var o3 = { val: c2 + ' steps', n:a.length, flag:false, text:'' };
+      if (!age || !S.sex) { o3.text = 'Enter age and sex above to compare with age norms.'; o3.nonorm = true; return o3; }
+      if (age < 60 || age > 94) { o3.text = 'Age norms cover 60 to 94.'; o3.nonorm = true; return o3; }
+      var rg = STEP_NORMS[S.sex][band(age)];
+      o3.flag = c2 < rg[0];
+      o3.text = (c2 < rg[0] ? 'Below' : c2 > rg[1] ? 'Above' : 'Within') + ' the middle 50% range for age ' + bandLabel(age) + ' and sex (' + rg[0] + ' to ' + rg[1] + ' steps, Rikli & Jones).';
+      return o3;
+    }
+    if (k === 'fsst') {
+      var fb = Math.min.apply(null, a.map(function(t){ return t.v; }));
+      return { val: r1(fb) + ' s', n:1, flag: fb > 15,
+        text: (fb > 15 ? 'Over 15 s, the cut-off for multiple fallers in community-dwelling older adults (Dite & Temple 2002).' : 'At or under the 15 s cut-off for multiple fallers in community-dwelling older adults (Dite & Temple 2002).') +
+              ' Fastest of ' + a.length + ' timed trial' + (a.length > 1 ? 's' : '') + '.' };
+    }
+    if (k === 'rpd') {
+      var mn = Math.min.apply(null, a.map(function(t){ return t.v; }));
+      return { val: mn + ' fingerbreadths', n:1, flag: mn <= 2,
+        text: 'Smallest rib-pelvic distance across sides. ' + (mn <= 2 ? '2 or fewer is a positive screen for a vertebral fracture, most likely lumbar, in some studies.' : 'Above the 2 fingerbreadth screening level.') + ' A screening sign, not a diagnosis; sources differ on under 2 versus 2 or fewer.' };
+    }
+    if (k === 'bs' || k === 'csr') {
+      var best = Math.max.apply(null, a.map(function(t){ return t.v; }));
+      var o4 = { val: sgn(best) + ' in', n:1, flag:false, text:'Best of ' + a.length + ' trial' + (a.length > 1 ? 's' : '') + '. ' };
+      if (!age || !S.sex) { o4.text += 'Enter age and sex above to compare with age norms.'; o4.nonorm = true; return o4; }
+      if (age < 60 || age > 94) { o4.text += 'Age norms cover 60 to 94.'; o4.nonorm = true; return o4; }
+      var rg2 = (k === 'bs' ? BS_NORMS : CSR_NORMS)[S.sex][band(age)];
+      o4.flag = best < rg2[0];
+      o4.text += (best < rg2[0] ? 'Below' : best > rg2[1] ? 'Above' : 'Within') + ' the middle 50% range for age ' + bandLabel(age) + ' and sex (' + sgn(rg2[0]) + ' to ' + sgn(rg2[1]) + ' in, Rikli & Jones).';
+      return o4;
+    }
+    if (k === 'mtbr') {
+      var sd = [[],[]];
+      a.forEach(function(t){ sd[t.side || 0].push(t.v); });
+      var bs2 = [sd[0].length ? Math.max.apply(null, sd[0]) : null, sd[1].length ? Math.max.apply(null, sd[1]) : null];
+      var have = bs2.filter(function(x){ return x !== null; });
+      var top = Math.max.apply(null, have);
+      var grp = age >= 85 ? 'c' : age >= 75 ? 'b' : age >= 65 ? 'a' : 'all';
+      var glabel = grp === 'c' ? '85 and older' : grp === 'b' ? '75 to 84' : grp === 'a' ? '65 to 74' : 'all ages';
+      var th = MTBR_NORMS[grp], ci = top >= th[0] ? 0 : top >= th[1] ? 1 : top >= th[2] ? 2 : top >= th[3] ? 3 : 4;
+      var tx = '';
+      if (have.length === 2) {
+        tx = 'Toward right ' + r1(bs2[0]) + ' in, toward left ' + r1(bs2[1]) + ' in. The higher direction is the test score' +
+             (bs2[0] === bs2[1] ? ' (both equal).' : '; preferred side is ' + (bs2[0] > bs2[1] ? 'right' : 'left') + '.');
+      } else tx = 'Only one direction recorded. The test score is the higher of the two directions, so this may understate it.';
+      tx += ' ' + MTBR_LABELS[ci] + ' for ' + glabel + ' (Stanziano 2010)' + (grp === 'all' ? '; enter age 65 or older for age-group percentiles.' : '.');
+      return { val: r1(top) + ' in', n:1, flag: ci >= 3 && have.length === 2, nonorm: have.length < 2, tag:'One direction only', text: tx };
+    }
+    if (k === 'owd') {
+      var mo = mean(a.map(function(t){ return t.v; }));
+      var ot;
+      if (mo <= 0) ot = '0 cm: the head touches the wall.';
+      else {
+        ot = 'Above 0 cm, so the head does not reach the wall. In the literature hyperkyphosis is defined at 4 cm or 5 cm' +
+             (mo >= 5 ? ' (at or above 5 cm here)' : mo >= 4 ? ' (at or above 4 cm here)' : '') + '. One grading: mild up to 5 cm, moderate 5.1 to 8 cm, severe over 8 cm (Balzini 2003).';
+      }
+      return { val: r1(mo) + ' cm', n:a.length, flag: mo > 0, text: ot };
+    }
+  }
+  function hasData(k){
+    if (k === 'fab') return !!fabResult();
+    if (k === 'bb') return !!bbResult();
+    if (k === 'fga' || k === 'dgi' || k === 'berg' || k === 'fist') return !!rubricResult(k);
+    if (k === 'ctsib') return !!ctsibResult();
+    if (k === 'sls') return !!slsResult();
+    if (k === 'fsb') return !!fsbResult();
+    if (k === 'abc' || k === 'fesi' || k === 'sfesi') return !!qResult(k);
+    if (k === 'mwt') return !!S.mwt;
+    return S[k].length > 0;
+  }
+
+  /* ---------- comparison with the previous visit ---------- */
+  var HIGHER_BETTER = { abc:true, fesi:false, sfesi:false, fsb:true, fsst:false, tug:false, tugcog:false, tugman:false, sts:false, owd:false, gait:true, gaitf:true, slso:true, slsc:true, cst:true, step2:true, mwt:true, ctsib:true, fab:true, fga:true, dgi:true, berg:true, fist:true, bb:true, rpd:true, bs:true, csr:true, mtbr:true };
+  var UNIT = { abc:'%', fesi:'points', sfesi:'points', fsb:'stages', fsst:'s', tug:'s', tugcog:'s', tugman:'s', sts:'s', gait:'m/s', gaitf:'m/s', slso:'s', slsc:'s', cst:'stands', step2:'steps', mwt:'m', ctsib:'s', fab:'points', fga:'points', dgi:'points', berg:'points', fist:'points', bb:'points', owd:'cm', rpd:'fingerbreadths', bs:'in', csr:'in', mtbr:'in' };
+  var DEC = { abc:1, fesi:0, sfesi:0, fsb:0, gait:2, gaitf:2, cst:0, step2:0, mwt:0, fab:0, fga:0, dgi:0, berg:0, fist:0, bb:0 };
+  function metricOf(d, k){
+    if (k === 'slso' || k === 'slsc') {
+      var g = d.sls; if (!g) return null;
+      var rows = k === 'slso' ? [g[0], g[1]] : [g[2], g[3]], all = [];
+      rows.forEach(function(r){ r.forEach(function(x){ if (x !== null) all.push(x); }); });
+      return all.length ? Math.max.apply(null, all) : null;
+    }
+    var a = d[k === 'gaitf' ? 'gait' : k];
+    if (k === 'abc' || k === 'fesi' || k === 'sfesi') {
+      var qs = 0, qn = 0; a.forEach(function(o){ if (o.a !== null) { qs += o.a; qn++; } });
+      if (qn !== a.length) return null;
+      return k === 'abc' ? qs / qn : qs;
+    }
+    if (k === 'fsb') {
+      if (!a || a.every(function(x){ return x === null; })) return null;
+      var ps = 0; for (var q = 0; q < 4; q++) { if (a[q] !== null && a[q] >= 10) ps++; else break; }
+      return ps;
+    }
+    if (k === 'mwt') return a ? a.d : null;
+    if (!a) return null;
+    if (k === 'fab' || k === 'fga' || k === 'dgi' || k === 'berg' || k === 'fist' || k === 'bb') {
+      var sum = 0, n = 0; a.forEach(function(o){ if (o.a !== null) { sum += o.a; n++; } });
+      return n === a.length ? sum : null;
+    }
+    if (k === 'ctsib') {
+      var sm = 0, c = 0; a.forEach(function(r){ var v = r.filter(function(x){ return x !== null; }); if (v.length) { sm += mean(v); c++; } });
+      return c === 4 ? sm : null;
+    }
+    if (!a.length) return null;
+    var vals = a.map(function(t){ return t.v; });
+    if (k === 'gait' || k === 'gaitf') {
+      var gt = a.filter(function(t){ return k === 'gaitf' ? t.mode === 'fast' : t.mode !== 'fast'; });
+      return gt.length ? mean(gt.map(function(t){ return t.d / t.v; })) : null;
+    }
+    if (k === 'cst' || k === 'step2') return vals[vals.length - 1];
+    if (k === 'rpd' || k === 'fsst') return Math.min.apply(null, vals);
+    if (k === 'bs' || k === 'csr' || k === 'mtbr') return Math.max.apply(null, vals);
+    return mean(vals);
+  }
+  function fmtVal(k, v){
+    var dec = DEC[k] === undefined ? 1 : DEC[k];
+    var t = (k === 'bs' || k === 'csr') && v > 0 ? '+' : '';
+    return t + v.toFixed(dec) + ' ' + (k === 'fsb' && Math.abs(v) === 1 ? 'stage' : UNIT[k]);
+  }
+  function fmtDiff(k, diff){
+    var dec = DEC[k] === undefined ? 1 : DEC[k], abs = Math.abs(diff).toFixed(dec);
+    if (parseFloat(abs) === 0) return null;
+    return (diff > 0 ? '+' : '-') + abs + ' ' + (k === 'fsb' && parseFloat(abs) === 1 ? 'stage' : UNIT[k]);
+  }
+  function priorSessions(){
+    if (typeof storageOK === 'undefined' || !storageOK || !S.code) return [];
+    var age = parseInt(S.age, 10);
+    return sessList().filter(function(x){
+      if (x.code !== S.code || !(x.visit < S.visit)) return false;
+      var d = x.data, pa = parseInt(d.age, 10);
+      if (S.sex && d.sex && S.sex !== d.sex) return false;
+      if (age && pa && Math.abs(age - pa) > 2) return false;
+      return true;
+    }).sort(function(a, b){ return a.visit < b.visit ? 1 : -1; });
+  }
+  function compareFor(k, prior, label){
+    var cur = metricOf(S, k); if (cur === null) return null;
+    for (var i = 0; i < prior.length; i++) {
+      var pm = metricOf(prior[i].data, k);
+      if (pm === null) continue;
+      var diff = cur - pm, ds = fmtDiff(k, diff), when = fmtDate(prior[i].visit);
+      var word = ds === null ? 'no change' : ((diff > 0) === HIGHER_BETTER[k] ? 'better' : 'worse');
+      return {
+        ui: (label ? label + ': since ' : 'Since ') + when + ': ' + fmtVal(k, pm) + ' to ' + fmtVal(k, cur) + (ds ? ' (' + ds + ', ' + word + ')' : ' (no change)') + '.',
+        note: ' ' + (label ? label + ' change' : 'Change') + ' since ' + when + ': ' + fmtVal(k, pm) + ' to ' + fmtVal(k, cur) + (ds ? ' (' + ds + ')' : ' (no change)') + '.'
+      };
+    }
+    return null;
+  }
+
+  function compareList(k, prior){
+    var pairs = k === 'gait' ? [['gait','Comfortable speed'], ['gaitf','Fast speed']] : k === 'sls' ? [['slso','Eyes open'], ['slsc','Eyes closed']] : [[k, '']];
+    return pairs.map(function(x){ return compareFor(x[0], prior, x[1]); }).filter(function(x){ return x; });
+  }
+
+  /* ---------- rendering ---------- */
+  function protoHtml(c, safety, open){
+    return '<details class="proto"' + (open ? ' open' : '') + '><summary><span>How to administer<span class="hint">tap to open</span></span></summary><ul>' +
+      c.protocol.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul>' +
+      (safety ? '<p class="safety">Use a gait belt and guard closely. Stop for chest pain, dizziness, new pain or the patient\u2019s request.</p>' : '') + '</details>';
+  }
+  function renderTabs(){
+    var h = '', busy = T.mode === 'running' || M.mode === 'running';
+    function tabBtn(k){
+      return '<button class="tab" role="tab" data-k="' + k + '" aria-selected="' + (S.active===k) + '"' + (busy ? ' disabled' : '') + '>' +
+             TESTS[k].tab + (hasData(k) ? '<span class="done" title="Has results"></span>' : '') + '</button>';
+    }
+    GROUPS.forEach(function(g){
+      h += '<div class="tabgroup" role="group" aria-label="' + g.n + '"><div class="grplbl">' + g.n + '</div>';
+      (g.subs || [{ n:'', keys:g.keys }]).forEach(function(b){
+        if (g.subs) h += '<div class="sublbl">' + b.n + '</div>';
+        h += '<div class="tabrow">' + b.keys.map(tabBtn).join('') + '</div>';
+      });
+      h += '</div>';
+    });
+    $('#tabs').innerHTML = h;
+  }
+
+  function renderFab(){
+    var c = TESTS.fab, h = '<h2>' + c.name + '</h2>';
+    h += protoHtml(c, false, true) + cdHtml([20,30]);
+    FAB_ITEMS.forEach(function(it, i){
+      h += '<div class="fabitem"><div class="nm">' + (i+1) + '. ' + it.n + (it.timed ? ' <span class="timedtag">(timed)</span>' : '') + '</div><div class="cue">' + it.cue + '</div>';
+      h += '<div class="opts" role="group" aria-label="Score for ' + it.n + (it.timed ? ', timed' : '') + '" data-i="' + i + '" data-t="fab">';
+      for (var v=0; v<=4; v++) h += '<button type="button" class="opt" data-score="' + v + '" aria-pressed="' + (S.fab[i].a===v) + '"><b>' + v + '</b><span>' + it.d[v] + '</span></button>';
+      h += '</div></div>';
+    });
+    $('#panel').innerHTML = h;
+  }
+
+  function renderRubric(k){
+    var c = TESTS[k], h = '<h2>' + c.name + '</h2>';
+    h += protoHtml(c, false, true) + cdHtml(c.cd || [15], c.cdv || 'timer');
+    c.items.forEach(function(it, i){
+      h += '<div class="fabitem"><div class="nm">' + (i+1) + '. ' + it.n + (it.timed ? ' <span class="timedtag">(timed)</span>' : '') + '</div><div class="cue">' + it.cue + '</div>';
+      h += '<div class="opts" role="group" aria-label="Score for ' + it.n + (it.timed ? ', timed' : '') + '" data-i="' + i + '" data-t="' + k + '">';
+      for (var v=0; v<=c.max; v++) h += '<button type="button" class="opt" data-score="' + v + '" aria-pressed="' + (S[k][i].a===v) + '"><b>' + v + '</b><span>' + it.d[v] + '</span></button>';
+      h += '</div></div>';
+    });
+    $('#panel').innerHTML = h;
+  }
+
+  function renderBb(){
+    var c = TESTS.bb, h = '<h2>' + c.name + '</h2>';
+    h += protoHtml(c, false, true) + cdHtml([10,30]);
+    BB_ITEMS.forEach(function(it, i){
+      var cue = it.cue;
+      if (i === 7 && S.tug.length) cue += ' Recorded TUG: ' + r1(mean(S.tug.map(function(t){ return t.v; }))) + ' s.';
+      h += '<div class="fabitem"><div class="nm">' + (i+1) + '. ' + it.n + (it.timed ? ' <span class="timedtag">(timed)</span>' : '') + '</div><div class="cue">' + cue + '</div>';
+      h += '<div class="seg" role="group" aria-label="Score for ' + it.n + (it.timed ? ', timed' : '') + '" data-i="' + i + '" data-t="bb">';
+      for (var v=0; v<=3; v++) h += '<button type="button" data-score="' + v + '" aria-pressed="' + (S.bb[i].a===v) + '">' + v + '</button>';
+      h += '</div></div>';
+    });
+    $('#panel').innerHTML = h;
+  }
+
+  function ctGridHtml(){
+    var m = ctMeans(), h = '';
+    for (var r=0; r<4; r++) {
+      h += '<div class="ctrow"><div class="ctname">' + CT_NAMES[r] + '</div><div class="ctcells">';
+      for (var c=0; c<3; c++) {
+        var v = S.ctsib[r][c], sel = (S.ctSel[0] === r && S.ctSel[1] === c);
+        h += '<button type="button" class="ctcell" data-ct="' + r + ',' + c + '" aria-pressed="' + sel + '" aria-label="Condition ' + (r+1) + ' trial ' + (c+1) + '">' + (v === null ? '\u2013' : r1(v)) + '</button>';
+      }
+      h += '<span class="ctmean">' + (m[r] === null ? '' : 'mean ' + r1(m[r]) + ' s') + '</span></div></div>';
+    }
+    return h;
+  }
+  function renderCtsib(){
+    var c = TESTS.ctsib, h = '<h2>' + c.name + '</h2>';
+    h += protoHtml(c, true, true) + cdHtml([30]);
+    h += '<div id="ctsibgrid" style="margin-top:8px">' + ctGridHtml() + '</div>';
+    h += '<div class="manual"><div class="field"><label class="lbl" for="ctman">Type a time (0 to 30 s) for the selected trial</label>' +
+         '<input id="ctman" type="number" inputmode="decimal" min="0" max="30" step="0.1"></div><button id="ctset" type="button">Set</button><button id="ctclr" type="button">Clear</button></div>';
+    $('#panel').innerHTML = h;
+  }
+  function ctRefresh(){ var g = $('#ctsibgrid'); if (g) g.innerHTML = ctGridHtml(); renderSummary(); renderTabs(); }
+  function ctAdvance(){
+    var r = S.ctSel[0], c = S.ctSel[1];
+    if (c < 2) S.ctSel = [r, c + 1]; else if (r < 3) S.ctSel = [r + 1, 0];
+  }
+  function ctRecord(sec){
+    var v = Math.round(Math.min(30, Math.max(0, sec)) * 10) / 10;
+    S.ctsib[S.ctSel[0]][S.ctSel[1]] = v; ctAdvance(); ctRefresh();
+  }
+
+  function slsGridHtml(){
+    var h = '';
+    for (var r = 0; r < 4; r++) {
+      var best = slsBest(S.sls[r]);
+      h += '<div class="ctrow"><div class="ctname">' + SLS_NAMES[r] + '</div><div class="ctcells">';
+      for (var c = 0; c < 3; c++) {
+        var v = S.sls[r][c], sel = (S.slsSel[0] === r && S.slsSel[1] === c);
+        h += '<button type="button" class="ctcell" data-sls="' + r + ',' + c + '" aria-pressed="' + sel + '" aria-label="' + SLS_NAMES[r] + ' trial ' + (c+1) + '">' + (v === null ? '\u2013' : r1(v)) + '</button>';
+      }
+      h += '<span class="ctmean">' + (best === null ? '' : 'best ' + r1(best) + ' s') + '</span></div></div>';
+    }
+    return h;
+  }
+  function renderSls(){
+    var c = TESTS.sls, h = '<h2>' + c.name + '</h2>';
+    h += protoHtml(c, true, true) + cdHtml([30,45], 'hold');
+    h += '<div id="slsgrid" style="margin-top:8px">' + slsGridHtml() + '</div>';
+    h += '<div class="manual"><div class="field"><label class="lbl" for="slsman">Type a time (0 to 45 s) for the selected trial</label>' +
+         '<input id="slsman" type="number" inputmode="decimal" min="0" max="45" step="0.1"></div><button id="slsset" type="button">Set</button><button id="slsclr" type="button">Clear</button></div>';
+    $('#panel').innerHTML = h;
+  }
+  function slsRefresh(){ var g = $('#slsgrid'); if (g) g.innerHTML = slsGridHtml(); renderSummary(); renderTabs(); }
+  function slsRecord(sec){
+    var v = Math.round(Math.min(45, Math.max(0, sec)) * 10) / 10;
+    S.sls[S.slsSel[0]][S.slsSel[1]] = v;
+    var r = S.slsSel[0], c = S.slsSel[1];
+    if (c < 2) S.slsSel = [r, c + 1]; else if (r < 3) S.slsSel = [r + 1, 0];
+    slsRefresh();
+  }
+
+  function fsbGridHtml(){
+    var h = '';
+    for (var r = 0; r < 4; r++) {
+      var v = S.fsb[r], sel = S.fsbSel === r;
+      h += '<div class="ctrow"><div class="ctname">' + FSB_NAMES[r] + '</div><div class="ctcells" style="grid-template-columns:1fr auto">' +
+           '<button type="button" class="ctcell" data-fsb="' + r + '" aria-pressed="' + sel + '" aria-label="' + FSB_NAMES[r] + ' time">' + (v === null ? '\u2013' : r1(v) + ' s') + '</button>' +
+           '<span class="ctmean">' + (v === null ? '' : v >= 10 ? 'held 10 s' : (r < 3 ? 'stop test' : 'not held')) + '</span></div></div>';
+    }
+    return h;
+  }
+  function renderFsb(){
+    var c = TESTS.fsb, h = '<h2>' + c.name + '</h2>';
+    h += protoHtml(c, true, true) + cdHtml([10], 'hold');
+    h += '<div id="fsbgrid" style="margin-top:8px">' + fsbGridHtml() + '</div>';
+    h += '<div class="manual"><div class="field"><label class="lbl" for="fsbman">Type a time (0 to 10 s) for the selected stage</label>' +
+         '<input id="fsbman" type="number" inputmode="decimal" min="0" max="10" step="0.1"></div><button id="fsbset" type="button">Set</button><button id="fsbclr" type="button">Clear</button></div>';
+    $('#panel').innerHTML = h;
+  }
+  function fsbRefresh(){ var g = $('#fsbgrid'); if (g) g.innerHTML = fsbGridHtml(); renderSummary(); renderTabs(); }
+  function fsbRecord(sec){
+    var v = Math.round(Math.min(10, Math.max(0, sec)) * 10) / 10;
+    S.fsb[S.fsbSel] = v;
+    if (v >= 10 && S.fsbSel < 3) S.fsbSel++;
+    fsbRefresh();
+  }
+
+  function renderQnr(k){
+    var c = TESTS[k], h = '<h2>' + c.name + '</h2>' + protoHtml(c, false, true);
+    h += '<p class="sub" style="margin:12px 0 4px">' + c.stem + '</p>';
+    c.items.forEach(function(it, i){
+      h += '<div class="fabitem"><div class="nm">' + (i+1) + '. ' + it + '</div>';
+      if (c.qtype === 'pct') {
+        h += '<select data-q="' + k + '" data-i="' + i + '" aria-label="Confidence for item ' + (i+1) + '" style="max-width:200px"><option value="">Choose a rating</option>';
+        for (var p = 0; p <= 100; p += 10) h += '<option value="' + p + '"' + (S[k][i].a === p ? ' selected' : '') + '>' + p + '%</option>';
+        h += '</select>';
+      } else {
+        var labs = ['1 Not at all','2 Somewhat','3 Fairly','4 Very'];
+        h += '<div class="seg" role="group" aria-label="Concern for item ' + (i+1) + '" data-i="' + i + '" data-t="' + k + '">';
+        for (var v = 1; v <= 4; v++) h += '<button type="button" data-score="' + v + '" aria-pressed="' + (S[k][i].a === v) + '" style="font-size:13px">' + labs[v-1] + '</button>';
+        h += '</div>';
+      }
+      h += '</div>';
+    });
+    $('#panel').innerHTML = h;
+  }
+
+  function renderMwt(){
+    var c = TESTS.mwt, f = S.mwtForm, h = '<h2>' + c.name + '</h2>';
+    h += protoHtml(c, false, false);
+    if (M.mode === 'idle') {
+      h += '<div class="row" style="margin-top:10px"><div class="field"><label class="lbl" for="mlap">Lap length (m)</label>' +
+           '<input id="mlap" type="number" inputmode="decimal" min="1" step="0.5" value="' + f.lap + '"></div></div>';
+      h += '<details class="proto"><summary>Vital signs (optional)</summary><div class="vgrid">';
+      [['hr0','Heart rate before'],['hr1','Heart rate after'],['sp0','SpO2 before (%)'],['sp1','SpO2 after (%)'],['b0','Dyspnea before (0 to 10)'],['b1','Dyspnea after (0 to 10)']].forEach(function(x){
+        h += '<div><label class="lbl" for="mf_' + x[0] + '">' + x[1] + '</label><input id="mf_' + x[0] + '" data-mf="' + x[0] + '" type="number" inputmode="decimal" value="' + f[x[0]] + '"></div>';
+      });
+      h += '</div></details>';
+      h += '<div class="display"><span class="big" id="mdisp">6:00</span></div>';
+      h += '<div class="status" style="text-align:center">Ready when the patient is at the start line.</div>';
+      h += '<div class="btns"><button class="btn" id="mstart" type="button">Start 6 minutes</button></div>';
+      if (S.mwt) {
+        h += '<div class="manual" style="margin-top:12px"><span style="flex:1">Saved: <strong>' + Math.round(S.mwt.d) + ' m</strong>' + (S.mwt.laps !== undefined ? ' (' + S.mwt.laps + ' laps + ' + r1(S.mwt.partial) + ' m)' : '') + '</span><button id="mdel" type="button">Delete</button></div>';
+      }
+      h += '<div class="manual"><div class="field"><label class="lbl" for="mman">Or enter total distance (m) manually</label>' +
+           '<input id="mman" type="number" inputmode="decimal" min="0" step="1"></div><button id="maddman" type="button">Save</button></div>';
+    } else if (M.mode === 'running') {
+      h += '<div class="display"><span class="big" id="mdisp">6:00</span></div>';
+      h += '<div class="status" id="mcue" style="text-align:center;min-height:48px;font-size:17px;color:var(--ink)">Timing\u2026</div>';
+      h += '<div class="status" id="mstats" style="text-align:center;font-weight:700">Laps: 0 (0 m)</div>';
+      h += '<div class="btns"><button class="btn tap" id="mlapbtn" type="button">Lap done</button>' +
+           '<div class="btns two"><button class="btn ghost" id="mundo" type="button">Undo lap</button><button class="btn ghost" id="mrest" type="button">Rest taken</button></div>' +
+           '<button class="btn ghost" id="mcancel" type="button">Cancel test</button></div>';
+    } else {
+      h += '<div class="display"><span class="big" id="mdisp">0:00</span></div>';
+      h += '<div class="status" style="text-align:center">Time. Mark where the patient stopped, then measure that last partial lap.</div>';
+      h += '<div class="manual"><div class="field"><label class="lbl" for="mpartial">Final partial lap (m). ' + M.laps + ' full laps counted.</label>' +
+           '<input id="mpartial" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0"></div></div>';
+      h += '<div class="status" style="text-align:center;font-weight:700" id="mtotal">Total: ' + Math.round(M.laps * lapLen()) + ' m</div>';
+      h += '<div class="btns two"><button class="btn small" id="msave" type="button">Save result</button><button class="btn small ghost" id="mredo" type="button">Redo</button></div>';
+    }
+    $('#panel').innerHTML = h;
+  }
+
+  function renderPanel(){
+    var k = S.active, c = TESTS[k];
+    if (c.kind === 'fab') { renderFab(); renderTabs(); return; }
+    if (c.kind === 'bb') { renderBb(); renderTabs(); return; }
+    if (c.kind === 'rubric') { renderRubric(k); renderTabs(); return; }
+    if (c.kind === 'qnr') { renderQnr(k); renderTabs(); return; }
+    if (c.kind === 'ctsib') { renderCtsib(); renderTabs(); return; }
+    if (c.kind === 'sls') { renderSls(); renderTabs(); return; }
+    if (c.kind === 'fsb') { renderFsb(); renderTabs(); return; }
+    if (c.kind === 'mwt') { renderMwt(); renderTabs(); return; }
+    var h = '<h2>' + c.name + '</h2>';
+    if (k === 'gait') {
+      h += '<label class="lbl" for="dist">Timed distance</label><select id="dist" style="max-width:160px;margin-bottom:8px"' + (T.mode==='running'?' disabled':'') + '>';
+      [4,6,10].forEach(function(d){ h += '<option value="'+d+'"'+(S.gaitDist===d?' selected':'')+'>'+d+' m</option>'; });
+      h += '</select>';
+      h += '<div class="seg" role="group" aria-label="Walking speed" style="margin-bottom:8px">' + [['comfortable','Comfortable speed'],['fast','Fast speed']].map(function(x){
+        return '<button type="button" data-gmode="' + x[0] + '" aria-pressed="' + (S.gaitMode === x[0]) + '"' + (T.mode !== 'idle' ? ' disabled' : '') + '>' + x[1] + '</button>'; }).join('') + '</div>';
+    }
+    h += protoHtml(c, c.kind !== 'measure', false);
+
+    if (k === 'tugcog') {
+      if (!S.cogNum) S.cogNum = 20 + Math.floor(Math.random() * 81);
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:10px 12px;background:var(--accent-soft);border-radius:10px">' +
+           '<span>Start counting backward by 3s from <strong style="font-size:26px;font-variant-numeric:tabular-nums">' + S.cogNum + '</strong></span>' +
+           '<button class="btn ghost small" id="newnum" type="button" style="width:auto;padding:0 14px"' + (T.mode==='running'?' disabled':'') + '>New number</button></div>';
+    }
+
+    if (c.kind !== 'measure') {
+      var isCount = c.kind === 'count';
+      var disp = isCount ? fmtLeft(c.dur, c.dur) : '0.0', unit = isCount ? (c.dur >= 60 ? 'time left' : 'seconds left') : 'seconds', status = '';
+      if (T.mode === 'stopped') {
+        if (isCount) { disp = String(T.pending); unit = c.countUnit; status = 'Time. Adjust the count if needed, then save.'; }
+        else { disp = r2(T.pending); status = k==='gait' ? 'Speed: ' + r2(S.gaitDist / T.pending) + ' m/s (' + S.gaitMode + ')' : 'Check the time, then save or redo.'; }
+      } else if (T.mode === 'running') {
+        status = isCount ? c.tapHint : 'Timing\u2026';
+      } else {
+        status = isCount ? c.readyHint : k === 'gait' ? (S.gaitMode === 'fast' ? 'Fast speed: "walk as fast as you safely can, without running."' : 'Comfortable speed: "walk at your usual, comfortable pace."') : 'Ready when the patient is positioned.';
+      }
+      h += '<div class="display"><span class="big" id="disp">' + disp + '</span></div>';
+      h += '<div class="status" style="text-align:center" id="status">' + unit + (status ? ' \u2014 ' + status : '') + '</div>';
+      if (isCount && T.mode === 'running') h += '<div class="display" style="padding:6px 0 0"><span class="big" id="cnt" style="font-size:48px">' + T.count + '</span><span class="unit">' + c.countUnit + ' counted</span></div>';
+
+      h += '<div class="btns">';
+      if (T.mode === 'idle') {
+        h += '<button class="btn" id="start" type="button">' + (isCount ? 'Start ' + (c.dur >= 60 ? (c.dur/60) + ' min' : c.dur + ' s') : 'Start') + '</button>';
+      } else if (T.mode === 'running') {
+        if (isCount) {
+          h += '<button class="btn tap" id="tap" type="button">' + c.tapLabel + '</button>';
+          h += '<div class="btns two"><button class="btn ghost" id="undo" type="button">Undo last</button><button class="btn ghost" id="cancel" type="button">Cancel</button></div>';
+        } else {
+          h += '<button class="btn stop" id="stop" type="button">Stop</button>';
+          h += '<button class="btn ghost" id="cancel" type="button">Cancel</button>';
+        }
+      } else {
+        if (isCount) h += '<div class="adjust"><button id="minus" type="button" aria-label="Subtract one">\u2212</button><span>Adjust count</span><button id="plus" type="button" aria-label="Add one">+</button></div>';
+        h += '<div class="btns two"><button class="btn small" id="save" type="button">Save trial</button><button class="btn small ghost" id="redo" type="button">Redo</button></div>';
+      }
+      h += '</div>';
+    }
+
+    if (T.mode === 'idle') {
+      var lbl = c.kind==='count' ? 'Enter ' + c.countUnit + ' manually' : c.kind==='measure' ? 'Enter ' + c.mLabel : 'Enter time in seconds';
+      var step = c.kind==='count' ? '1' : c.kind==='measure' ? c.mStep : '0.01';
+      if (c.kind === 'measure' && c.sides) {
+        h += '<div class="seg" role="group" aria-label="Side" style="margin-top:14px">' + c.sides.map(function(n, i){
+          return '<button type="button" data-sidesel="' + i + '" aria-pressed="' + ((S.side[k] || 0) === i) + '">' + n + '</button>'; }).join('') + '</div>';
+      }
+      if (c.kind === 'measure' && c.signed) {
+        h += '<div class="seg" role="group" aria-label="Sign" style="margin-top:' + (c.sides ? '8' : '14') + 'px">' +
+             '<button type="button" data-signsel="-1" aria-pressed="' + (S.sign[k] === -1) + '">' + c.signLabels[0] + '</button>' +
+             '<button type="button" data-signsel="1" aria-pressed="' + (S.sign[k] === 1) + '">' + c.signLabels[1] + '</button></div>';
+      }
+      h += '<div class="manual" style="' + ((c.sides || c.signed) ? 'border-top:0;margin-top:8px;padding-top:0' : '') + '"><div class="field"><label class="lbl" for="man">' + lbl + '</label>' +
+           '<input id="man" type="number" inputmode="decimal" step="' + step + '"' + (c.signed ? ' min="0"' : ' min="0"') + '></div><button id="addman" type="button">Add</button></div>';
+      h += '<div class="status" id="manhint"></div>';
+    }
+
+    var a = S[k];
+    if (a.length) {
+      h += '<ul class="trials">';
+      a.forEach(function(t, i){
+        var lab = c.kind==='count' ? t.v + ' ' + c.countUnit : c.kind==='measure' ? (c.signed ? sgn(t.v) : t.v) + ' ' + c.mUnit + (c.sides ? ' (' + c.sides[t.side || 0] + ')' : '') : r2(t.v) + ' s' + (k==='gait' ? ' over ' + t.d + ' m = ' + r2(t.d/t.v) + ' m/s (' + (t.mode === 'fast' ? 'fast' : 'comfortable') + ')' : '');
+        h += '<li><span>Trial ' + (i+1) + ': <strong>' + lab + '</strong></span><button class="x" data-del="' + i + '" type="button" aria-label="Delete trial ' + (i+1) + '">Delete</button></li>';
+      });
+      h += '</ul>';
+    }
+    $('#panel').innerHTML = h;
+    renderTabs();
+  }
+
+  function renderSummary(){
+    var h = '', lines = [], untested = [], prior = priorSessions();
+    GROUPS.forEach(function(g){
+      var gh = '', gl = [];
+      (g.subs || [{ n:'', keys:g.keys }]).forEach(function(b){
+        var bh = '', bl = [];
+        b.keys.forEach(function(k){
+          var r = result(k), c = TESTS[k];
+          if (!r) { untested.push(c.tab); return; }
+          var cls = r.nonorm ? 'none' : (r.flag ? 'flag' : 'ok');
+          var tag = r.pill || (r.nonorm ? (r.tag || 'No norm') : (r.flag ? 'Flag' : 'Within reference'));
+          var cps = prior.length ? compareList(k, prior) : [];
+          bh += '<div class="res"><div class="top"><strong>' + c.name + '</strong><span class="val">' + r.val + '</span></div>' +
+                '<span class="pill ' + cls + '">' + tag + '</span><p>' + r.text + (r.n>1 ? ' Mean of ' + r.n + ' trials.' : '') + '</p>' +
+                cps.map(function(x){ return '<p class="chg">' + x.ui + '</p>'; }).join('') + '</div>';
+          bl.push(c.name + ': ' + r.val + (r.n>1 ? ' (mean of ' + r.n + ' trials)' : '') + '. ' + r.text + cps.map(function(x){ return x.note; }).join(''));
+        });
+        if (bl.length) {
+          if (g.subs) { gh += '<h4 class="sumsub">' + b.n + '</h4>'; gl.push(b.n + ':'); }
+          gh += bh; gl = gl.concat(bl);
+        }
+      });
+      if (gl.length) { h += '<h3 class="sumgrp">' + g.n + '</h3>' + gh; lines.push(g.n.toUpperCase()); lines = lines.concat(gl); }
+    });
+    if (!lines.length) h = '<p class="sub" style="margin:0">No results yet. Pick a test above to begin.</p>';
+    else if (untested.length) h += '<p class="sub" style="margin:10px 0 0">Not tested: ' + untested.join(', ') + '</p>';
+    $('#summary').innerHTML = h;
+
+    var head = 'Functional mobility testing, ' + fmtDate(S.visit);
+    var meta = [];
+    if (S.age) meta.push('age ' + S.age);
+    if (S.sex) meta.push(S.sex === 'F' ? 'female' : 'male');
+    if (S.device) meta.push('device/footwear: ' + S.device);
+    var ex = ($('#extra').value || '').trim();
+    var txt = (lines.length || ex) ? head + (meta.length ? ' (' + meta.join(', ') + ')' : '') + (lines.length ? '\n' + lines.join('\n') : '') + (ex ? '\nObservations: ' + ex : '') : '';
+    $('#note').value = txt;
+    scheduleDraft();
+  }
+
+  function refresh(){ renderPanel(); renderSummary(); }
+
+  /* ---------- events ---------- */
+  function vit(){ var f = S.mwtForm; return { hr0:f.hr0, hr1:f.hr1, sp0:f.sp0, sp1:f.sp1, b0:f.b0, b1:f.b1 }; }
+
+  $('#tabs').addEventListener('click', function(e){
+    var b = e.target.closest('.tab'); if (!b || T.mode === 'running' || M.mode === 'running') return;
+    resetTimer(); cdStop(); mReset(); S.active = b.getAttribute('data-k'); refresh();
+  });
+
+  $('#panel').addEventListener('click', function(e){
+    var t = e.target;
+    var sb = t.closest('[data-score]');
+    if (sb) {
+      var g = sb.parentNode, gi = parseInt(g.getAttribute('data-i'), 10), v = parseInt(sb.getAttribute('data-score'), 10);
+      var tbl = S[g.getAttribute('data-t')];
+      tbl[gi].a = tbl[gi].a === v ? null : v;
+      g.querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-pressed', String(parseInt(b.getAttribute('data-score'),10) === tbl[gi].a)); });
+      renderSummary(); renderTabs(); return;
+    }
+    var gmb = t.closest('[data-gmode]');
+    if (gmb) { S.gaitMode = gmb.getAttribute('data-gmode'); renderPanel(); return; }
+    var ssb = t.closest('[data-sidesel],[data-signsel]');
+    if (ssb) {
+      var gg = ssb.parentNode, kk = S.active;
+      if (ssb.hasAttribute('data-sidesel')) S.side[kk] = parseInt(ssb.getAttribute('data-sidesel'), 10);
+      else S.sign[kk] = parseInt(ssb.getAttribute('data-signsel'), 10);
+      gg.querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-pressed', String(b === ssb)); });
+      return;
+    }
+    var ctb = t.closest('[data-ct]');
+    if (ctb) { var p = ctb.getAttribute('data-ct').split(','); S.ctSel = [parseInt(p[0],10), parseInt(p[1],10)]; ctRefresh(); return; }
+    var fsbb = t.closest('[data-fsb]');
+    if (fsbb) { S.fsbSel = parseInt(fsbb.getAttribute('data-fsb'), 10); fsbRefresh(); return; }
+    if (t.id === 'fsbset') {
+      var fv = parseFloat($('#fsbman').value);
+      if (!(fv >= 0)) { $('#fsbman').focus(); return; }
+      fsbRecord(fv); var fm = $('#fsbman'); if (fm) fm.value = ''; return;
+    }
+    if (t.id === 'fsbclr') { S.fsb[S.fsbSel] = null; fsbRefresh(); return; }
+    var slb = t.closest('[data-sls]');
+    if (slb) { var sp = slb.getAttribute('data-sls').split(','); S.slsSel = [parseInt(sp[0],10), parseInt(sp[1],10)]; slsRefresh(); return; }
+    if (t.id === 'slsset') {
+      var sv = parseFloat($('#slsman').value);
+      if (!(sv >= 0)) { $('#slsman').focus(); return; }
+      slsRecord(sv); var sm = $('#slsman'); if (sm) sm.value = ''; return;
+    }
+    if (t.id === 'slsclr') { S.sls[S.slsSel[0]][S.slsSel[1]] = null; slsRefresh(); return; }
+    var cd = t.getAttribute('data-cd');
+    if (cd) { cdStart(parseInt(cd, 10)); return; }
+    if (t.id === 'cdstop') {
+      if (F.id) {
+        var ee = Math.min(F.dur, (performance.now() - F.t0) / 1000); cdStop();
+        var dd = $('#cddisp'); if (dd) dd.textContent = ee.toFixed(1);
+        var st2 = $('#cdstatus'); if (st2) st2.textContent = 'Stopped at ' + ee.toFixed(1) + ' s.';
+        onHoldDone(ee);
+      }
+      return;
+    }
+    if (t.id === 'ctset') {
+      var cv = parseFloat($('#ctman').value);
+      if (!(cv >= 0)) { $('#ctman').focus(); return; }
+      ctRecord(cv); var cm = $('#ctman'); if (cm) cm.value = ''; return;
+    }
+    if (t.id === 'ctclr') { S.ctsib[S.ctSel[0]][S.ctSel[1]] = null; ctRefresh(); return; }
+
+    var id = t.id, k = S.active, c = TESTS[k];
+
+    if (k === 'mwt') {
+      if (id === 'mstart') mStart();
+      else if (id === 'mlapbtn') { M.laps++; buzz(20); mStats(); }
+      else if (id === 'mundo') { M.laps = Math.max(0, M.laps - 1); mStats(); }
+      else if (id === 'mrest') { M.rests++; mStats(); }
+      else if (id === 'mcancel' || id === 'mredo') { mReset(); refresh(); }
+      else if (id === 'msave') {
+        var pt = parseFloat($('#mpartial').value); if (!(pt >= 0)) pt = 0;
+        S.mwt = Object.assign({ d: M.laps * lapLen() + pt, laps: M.laps, lap: lapLen(), partial: pt, rests: M.rests }, vit());
+        mReset(); refresh();
+      }
+      else if (id === 'mdel') { S.mwt = null; refresh(); }
+      else if (id === 'maddman') {
+        var md = parseFloat($('#mman').value);
+        if (!(md > 0)) { $('#mman').focus(); return; }
+        S.mwt = Object.assign({ d: md, rests: 0 }, vit()); refresh();
+      }
+      return;
+    }
+    if (c.kind === 'fab' || c.kind === 'bb' || c.kind === 'ctsib' || c.kind === 'sls' || c.kind === 'fsb' || c.kind === 'rubric' || c.kind === 'qnr') return;
+
+    if (t.getAttribute('data-del') !== null && t.classList.contains('x')) {
+      S[k].splice(parseInt(t.getAttribute('data-del'),10), 1); refresh(); return;
+    }
+    if (id === 'start') start();
+    else if (id === 'stop') stopWatch();
+    else if (id === 'newnum') { S.cogNum = 20 + Math.floor(Math.random() * 81); renderPanel(); }
+    else if (id === 'tap') { T.count++; buzz(15); var el = $('#cnt'); if (el) el.textContent = T.count; }
+    else if (id === 'undo') { T.count = Math.max(0, T.count-1); var el2 = $('#cnt'); if (el2) el2.textContent = T.count; }
+    else if (id === 'cancel') { resetTimer(); refresh(); }
+    else if (id === 'redo') { resetTimer(); refresh(); }
+    else if (id === 'plus') { T.pending++; setDisplay(String(T.pending)); }
+    else if (id === 'minus') { T.pending = Math.max(0, T.pending-1); setDisplay(String(T.pending)); }
+    else if (id === 'save') {
+      var tr = { v: T.pending }; if (k === 'gait') { tr.d = S.gaitDist; tr.mode = S.gaitMode; }
+      S[k].push(tr); if (k === 'tugcog') S.cogNum = 0; resetTimer(); refresh();
+    }
+    else if (id === 'addman') {
+      var mv = parseFloat($('#man').value);
+      if (!(mv >= 0) || (c.kind === 'watch' && mv <= 0)) { $('#man').focus(); return; }
+      if (c.signed && mv !== 0) {
+        if (!S.sign[k]) { var mh = $('#manhint'); if (mh) mh.textContent = 'Choose ' + c.signLabels[0] + ' or ' + c.signLabels[1] + ' first.'; return; }
+        mv = mv * S.sign[k];
+      }
+      var t2 = { v: mv }; if (k === 'gait') { t2.d = S.gaitDist; t2.mode = S.gaitMode; } if (c.sides) t2.side = S.side[k] || 0;
+      S[k].push(t2); refresh();
+    }
+  });
+
+  $('#panel').addEventListener('input', function(e){
+    var t = e.target;
+    if (t.getAttribute('data-mf')) S.mwtForm[t.getAttribute('data-mf')] = t.value;
+    else if (t.id === 'mlap') S.mwtForm.lap = t.value;
+    else if (t.id === 'mpartial') {
+      var p = parseFloat(t.value); if (!(p >= 0)) p = 0;
+      var tot = $('#mtotal'); if (tot) tot.textContent = 'Total: ' + Math.round(M.laps * lapLen() + p) + ' m';
+    }
+    scheduleDraft();
+  });
+
+  $('#panel').addEventListener('change', function(e){
+    if (e.target.id === 'dist') { S.gaitDist = parseInt(e.target.value, 10); renderPanel(); }
+    var qk = e.target.getAttribute && e.target.getAttribute('data-q');
+    if (qk) {
+      var qi = parseInt(e.target.getAttribute('data-i'), 10);
+      S[qk][qi].a = e.target.value === '' ? null : parseInt(e.target.value, 10);
+      renderSummary(); renderTabs();
+    }
+  });
+
+  $('#age').addEventListener('input', function(e){ S.age = e.target.value; renderSummary(); });
+  $('#height').addEventListener('input', function(e){ S.height = e.target.value; renderSummary(); });
+  $('#weight').addEventListener('input', function(e){ S.weight = e.target.value; renderSummary(); });
+  $('#extra').addEventListener('input', function(){ renderSummary(); });
+  $('#device').addEventListener('input', function(e){ S.device = e.target.value; renderSummary(); });
+  document.querySelectorAll('[data-sex]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var v = b.getAttribute('data-sex');
+      S.sex = S.sex === v ? '' : v;
+      document.querySelectorAll('[data-sex]').forEach(function(x){ x.setAttribute('aria-pressed', String(x.getAttribute('data-sex') === S.sex)); });
+      renderSummary();
+    });
+  });
+
+  $('#copy').addEventListener('click', function(){
+    var ta = $('#note'), st = $('#copystatus');
+    if (!ta.value.trim()) { st.textContent = 'Nothing to copy yet.'; return; }
+    function ok(){ st.textContent = 'Copied.'; }
+    function fallback(){
+      try { ta.removeAttribute('readonly'); ta.select(); ta.setSelectionRange(0, 99999); var done = document.execCommand('copy'); ta.setAttribute('readonly',''); st.textContent = done ? 'Copied.' : 'Select the note text and copy it manually.'; }
+      catch(e){ st.textContent = 'Select the note text and copy it manually.'; }
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(ok, fallback);
+      else fallback();
+    } catch(e){ fallback(); }
+  });
+
+  /* ---------- export ---------- */
+  var DL = null;
+  function xmlEsc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function buildDocx(text){
+    var paras = text.split('\n').map(function(line, i){
+      var bold = i === 0 || (line.length > 0 && line.length < 60 && line === line.toUpperCase() && /[A-Z]/.test(line));
+      return '<w:p><w:pPr><w:spacing w:after="120"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>' + (bold ? '<w:b/>' : '') +
+             '<w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">' + xmlEsc(line) + '</w:t></w:r></w:p>';
+    }).join('');
+    var zip = new window.JSZip();
+    zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+    zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+    zip.file('word/document.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + paras + '</w:body></w:document>');
+    return zip.generateAsync({ type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  }
+  function exportNote(fmt){
+    var st = $('#copystatus'), txt = $('#note').value;
+    if (!DL) { st.textContent = 'Export is not available in this view. Use Copy note.'; return; }
+    if (!txt.trim()) { st.textContent = 'Record at least one result before exporting.'; return; }
+    var name = 'mobility-note-' + S.visit;
+    var p = fmt === 'docx' ? buildDocx(txt).then(function(blob){ return DL.save({ filename: name + '.docx', data: blob }); })
+                           : DL.save({ filename: name + '.txt', data: txt });
+    st.textContent = 'Waiting for you to confirm the save\u2026';
+    p.then(function(){ st.textContent = 'Exported.'; }, function(err){
+      var code = err && err.code;
+      st.textContent = code === 'declined' ? 'Export cancelled.' : 'Could not export (' + (code || 'error') + '). Use Copy note instead.';
+    });
+  }
+  $('#exptxt').addEventListener('click', function(){ exportNote('txt'); });
+  $('#expdocx').addEventListener('click', function(){ exportNote('docx'); });
+  function fallbackSave(o){
+    return new Promise(function(resolve, reject){
+      try {
+        var blob = o.data instanceof Blob ? o.data : new Blob([o.data], { type: /\.json$/i.test(o.filename) ? 'application/json' : 'text/plain' });
+        var url = URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = url; a.download = o.filename; a.style.display = 'none';
+        document.body.appendChild(a); a.click();
+        setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1500);
+        resolve({ status:'saved' });
+      } catch(e){ reject({ code:'unavailable', message:'Download failed' }); }
+    });
+  }
+  try {
+    if (!(window.claude && window.claude.use)) {
+      DL = { save: fallbackSave }; $('#exportrow').hidden = false; $('#filesave').hidden = false;
+      if (!window.JSZip) $('#expdocx').hidden = true;
+    } else {
+      window.claude.use('downloads').then(function(d){
+        if (!d) return;
+        DL = d; $('#exportrow').hidden = false; $('#filesave').hidden = false;
+        if (!window.JSZip) $('#expdocx').hidden = true;
+      }).catch(function(){});
+    }
+  } catch(e){}
+
+  /* ---------- sessions saved on this device ---------- */
+  var KEY_SESS = 'fmts.sessions.v1', KEY_DRAFT = 'fmts.draft.v1', RETAIN_DAYS = 90, DAY = 86400000;
+  var storageOK = (function(){ try { localStorage.setItem('fmts.t','1'); localStorage.removeItem('fmts.t'); return true; } catch(e){ return false; } })();
+  var draftPending = false, baseline = '', saveT = 0;
+  function lsGet(k){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } }
+  function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
+  function lsDel(k){ try { localStorage.removeItem(k); } catch(e){} }
+  function fmtDate(v){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? new Date(+m[1], +m[2]-1, +m[3]).toLocaleDateString() : (v || ''); }
+  function snapshot(){ var o = {}; SNAP_KEYS.forEach(function(k){ o[k] = S[k]; }); o.extra = $('#extra').value; return JSON.parse(JSON.stringify(o)); }
+  function snapStr(){ return JSON.stringify(snapshot()); }
+  function hasAnyData(){ return !!(S.age || S.code || S.height || S.weight || S.device || ($('#extra').value || '').trim() || ORDER.some(hasData)); }
+  function isDirty(){ return hasAnyData() && snapStr() !== baseline; }
+  function snapHas(d, k){
+    var v = d[k]; if (!v) return false;
+    if (k === 'mwt') return true;
+    if (k === 'fsb') return v.some(function(x){ return x !== null; });
+    if (k === 'abc' || k === 'fesi' || k === 'sfesi') return v.some(function(o){ return o.a !== null; });
+    if (k === 'ctsib' || k === 'sls') return v.some(function(r){ return r.some(function(x){ return x !== null; }); });
+    if (k === 'fab' || k === 'fga' || k === 'dgi' || k === 'berg' || k === 'fist' || k === 'bb') return v.some(function(o){ return o.a !== null; });
+    return v.length > 0;
+  }
+  function syncInputs(){
+    $('#age').value = S.age; $('#height').value = S.height; $('#weight').value = S.weight; $('#device').value = S.device;
+    $('#code').value = S.code; $('#visit').value = S.visit;
+    document.querySelectorAll('[data-sex]').forEach(function(x){ x.setAttribute('aria-pressed', String(x.getAttribute('data-sex') === S.sex)); });
+  }
+  function loadState(d){
+    var b = blankData();
+    resetTimer(); cdStop(); mReset();
+    SNAP_KEYS.forEach(function(k){ S[k] = JSON.parse(JSON.stringify(d && d[k] !== undefined ? d[k] : b[k])); });
+    S.active = 'tug'; S.gaitMode = 'comfortable'; S.cogNum = 0; S.ctSel = [0,0]; S.slsSel = [0,0]; S.fsbSel = 0; S.side = {}; S.sign = {};
+    $('#extra').value = (d && d.extra) || '';
+    $('#copystatus').textContent = ''; $('#savestatus').textContent = '';
+    syncInputs(); refresh();
+  }
+  function scheduleDraft(){
+    if (!storageOK || draftPending) return;
+    clearTimeout(saveT);
+    saveT = setTimeout(function(){
+      if (isDirty()) lsSet(KEY_DRAFT, { saved: Date.now(), data: snapshot() }); else lsDel(KEY_DRAFT);
+    }, 400);
+  }
+  function armed(btn, label, fn){
+    if (btn.getAttribute('data-arm') === '1') { btn.removeAttribute('data-arm'); btn.textContent = btn.getAttribute('data-orig'); fn(); return; }
+    btn.setAttribute('data-orig', btn.textContent); btn.setAttribute('data-arm', '1'); btn.textContent = label;
+    setTimeout(function(){ if (btn.getAttribute('data-arm') === '1') { btn.removeAttribute('data-arm'); btn.textContent = btn.getAttribute('data-orig'); } }, 4000);
+  }
+  function sessList(){
+    var a = lsGet(KEY_SESS) || [], cutoff = Date.now() - RETAIN_DAYS * DAY;
+    var kept = a.filter(function(x){ return x && x.saved >= cutoff && x.data; });
+    if (kept.length !== a.length) lsSet(KEY_SESS, kept);
+    return kept;
+  }
+  function renderSessions(){
+    if (!storageOK) return;
+    var list = sessList().sort(function(a, b){ return a.code < b.code ? -1 : a.code > b.code ? 1 : (a.visit < b.visit ? 1 : -1); });
+    $('#sesscount').textContent = list.length;
+    var h = '', last = null;
+    if (!list.length) h = '<p class="sub" style="margin:8px 0 0">No saved sessions yet.</p>';
+    list.forEach(function(x){
+      if (x.code !== last) { h += '<h3 class="sumgrp">' + x.code + '</h3>'; last = x.code; }
+      var d = x.data, n = ORDER.filter(function(k){ return snapHas(d, k); }).length, info = [];
+      if (d.age) info.push('age ' + d.age);
+      if (d.sex) info.push(d.sex === 'F' ? 'female' : 'male');
+      info.push(n + ' test' + (n === 1 ? '' : 's'));
+      h += '<div class="res"><div class="top"><strong>' + fmtDate(x.visit) + '</strong><span style="color:var(--muted);font-size:14px">' + info.join(', ') + '</span></div>' +
+           '<div class="sessbtns"><button type="button" data-act="open" data-sid="' + x.id + '">Open</button>' +
+           '<button type="button" data-act="new" data-sid="' + x.id + '">New visit</button>' +
+           '<button type="button" data-act="del" data-sid="' + x.id + '">Delete</button></div></div>';
+    });
+    $('#sessions').innerHTML = h;
+  }
+  function saveSession(){
+    var st = $('#savestatus');
+    if (!S.code) { st.textContent = 'Enter the patient\u2019s first and last initials first.'; $('#code').focus(); return; }
+    if (!ORDER.some(hasData)) { st.textContent = 'Record at least one result before saving.'; return; }
+    var id = S.code + '|' + S.visit, list = sessList().filter(function(x){ return x.id !== id; });
+    list.push({ id: id, code: S.code, visit: S.visit, saved: Date.now(), data: snapshot() });
+    if (!lsSet(KEY_SESS, list)) { st.textContent = 'Could not save. Browser storage may be full or blocked.'; return; }
+    baseline = snapStr(); lsDel(KEY_DRAFT);
+    st.textContent = 'Saved on this device for ' + RETAIN_DAYS + ' days.';
+    renderSessions();
+  }
+  $('#savesess').addEventListener('click', saveSession);
+  $('#sessions').addEventListener('click', function(e){
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var id = b.getAttribute('data-sid'), act = b.getAttribute('data-act');
+    var entry = sessList().filter(function(x){ return x.id === id; })[0]; if (!entry) return;
+    if (act === 'del') {
+      armed(b, 'Tap again to delete', function(){ lsSet(KEY_SESS, sessList().filter(function(x){ return x.id !== id; })); renderSessions(); });
+      return;
+    }
+    var go = function(){
+      if (act === 'open') loadState(entry.data);
+      else {
+        var nd = blankData();
+        ['age','sex','height','weight','device','gaitDist','code'].forEach(function(k){ if (entry.data[k] !== undefined) nd[k] = entry.data[k]; });
+        loadState(nd);
+      }
+      baseline = snapStr();
+      window.scrollTo(0, 0);
+    };
+    if (isDirty()) armed(b, 'Replace current? Tap again', go); else go();
+  });
+  function doClear(){
+    lsDel(KEY_DRAFT); draftPending = false; $('#draftbar').hidden = true; $('#clearpanel').hidden = true;
+    loadState(null); baseline = snapStr();
+  }
+  $('#clear').addEventListener('click', function(){
+    if (isDirty()) { $('#clearpanel').hidden = false; $('#clearpanel').scrollIntoView && $('#clearpanel').scrollIntoView({ block:'nearest' }); return; }
+    armed($('#clear'), 'Tap again to clear everything', doClear);
+  });
+  $('#cpsave').addEventListener('click', function(){
+    saveSession();
+    if (!isDirty()) { $('#clearpanel').hidden = true; $('#copystatus').textContent = 'Saved. Tap Start new patient when you are ready.'; }
+  });
+  $('#cpexp').addEventListener('click', function(){ exportNote('txt'); });
+  $('#cpclear').addEventListener('click', doClear);
+  $('#cpcancel').addEventListener('click', function(){ $('#clearpanel').hidden = true; });
+
+  /* ---------- session files ---------- */
+  function validSnap(d){
+    if (!d || typeof d !== 'object') return false;
+    var b = blankData();
+    for (var i = 0; i < SNAP_KEYS.length; i++) {
+      var k = SNAP_KEYS[i], v = d[k], bv = b[k];
+      if (v === undefined) continue;
+      if (k === 'mwt') { if (v !== null && typeof v !== 'object') return false; if (v && !(isFinite(v.d))) return false; continue; }
+      if (k === 'mwtForm') { if (!v || typeof v !== 'object') return false; continue; }
+      if (k === 'fsb') { if (!Array.isArray(v) || v.length !== 4 || !v.every(function(x){ return x === null || isFinite(x); })) return false; continue; }
+      if (k === 'abc' || k === 'fesi' || k === 'sfesi') {
+        var lo = k === 'abc' ? 0 : 1, hi = k === 'abc' ? 100 : 4;
+        if (!Array.isArray(v) || v.length !== bv.length || !v.every(function(o){ return o && (o.a === null || (isFinite(o.a) && o.a >= lo && o.a <= hi)); })) return false;
+        continue;
+      }
+      if (Array.isArray(bv) !== Array.isArray(v)) return false;
+      if (!Array.isArray(bv)) { if (typeof v !== typeof bv) return false; continue; }
+      if (k === 'ctsib' || k === 'sls') {
+        if (v.length !== 4 || !v.every(function(r){ return Array.isArray(r) && r.length === 3 && r.every(function(x){ return x === null || isFinite(x); }); })) return false;
+      } else if (k === 'fab' || k === 'fga' || k === 'dgi' || k === 'berg' || k === 'fist' || k === 'bb') {
+        if (v.length !== bv.length || !v.every(function(o){ return o && (o.a === null || (isFinite(o.a) && o.a >= 0 && o.a <= 4)); })) return false;
+      } else if (!v.every(function(t){ return t && isFinite(t.v) && (t.d === undefined || isFinite(t.d)) && (t.side === undefined || t.side === 0 || t.side === 1) && (t.mode === undefined || t.mode === 'comfortable' || t.mode === 'fast'); })) return false;
+    }
+    if (d.sex !== undefined && ['', 'M', 'F'].indexOf(d.sex) < 0) return false;
+    if (d.code !== undefined && !/^[A-Z]{0,2}$/.test(d.code)) return false;
+    if (d.visit !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(d.visit)) return false;
+    if (d.gaitDist !== undefined && [4, 6, 10].indexOf(d.gaitDist) < 0) return false;
+    if (d.extra !== undefined && typeof d.extra !== 'string') return false;
+    return true;
+  }
+  function saveSessionFile(){
+    var st = $('#filestatus');
+    if (!DL) { st.textContent = 'Saving files is not available in this view.'; return; }
+    if (!hasAnyData()) { st.textContent = 'Nothing to save yet.'; return; }
+    var obj = { app:'functional-mobility-test-station', version:1, exported:new Date().toISOString(), data:snapshot() };
+    st.textContent = 'Waiting for you to confirm the save\u2026';
+    DL.save({ filename:'mobility-session-' + (S.code || 'patient') + '-' + S.visit + '.json', data:JSON.stringify(obj, null, 1) }).then(function(){
+      baseline = snapStr(); st.textContent = 'Session file saved. Store it where your institution keeps patient data.'; scheduleDraft();
+    }, function(err){
+      var code = err && err.code; st.textContent = code === 'declined' ? 'Save cancelled.' : 'Could not save the file (' + (code || 'error') + ').';
+    });
+  }
+  $('#filesave').addEventListener('click', saveSessionFile);
+  $('#fileopen').addEventListener('click', function(){
+    var go = function(){ var fi = $('#fileinput'); fi.value = ''; fi.click(); };
+    if (isDirty()) armed($('#fileopen'), 'Replace current? Tap again', go); else go();
+  });
+  $('#fileinput').addEventListener('change', function(e){
+    var f = e.target.files && e.target.files[0], st = $('#filestatus'); if (!f) return;
+    if (f.size > 2000000) { st.textContent = 'That file is too large to be a session file.'; return; }
+    var r = new FileReader();
+    r.onload = function(){
+      try {
+        var o = JSON.parse(r.result);
+        if (!o || o.app !== 'functional-mobility-test-station' || !validSnap(o.data)) throw new Error('bad');
+        loadState(o.data); baseline = '';
+        $('#filestatus').textContent = 'Opened session file (' + (o.data.code || 'no initials') + ', ' + fmtDate(o.data.visit || todayStr()) + '). Not yet saved on this device.';
+        scheduleDraft(); window.scrollTo(0, 0);
+      } catch(err){ $('#filestatus').textContent = 'That file is not a valid session file for this tool.'; }
+    };
+    r.onerror = function(){ $('#filestatus').textContent = 'Could not read that file.'; };
+    r.readAsText(f);
+  });
+
+  $('#code').addEventListener('input', function(e){
+    var v = e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 2);
+    e.target.value = v; S.code = v; renderSummary();
+  });
+  $('#visit').addEventListener('input', function(e){ S.visit = e.target.value || todayStr(); renderSummary(); });
+  $('#draftresume').addEventListener('click', function(){
+    var dr = lsGet(KEY_DRAFT); draftPending = false; $('#draftbar').hidden = true;
+    if (dr && dr.data) { loadState(dr.data); baseline = ''; scheduleDraft(); }
+  });
+  $('#draftdiscard').addEventListener('click', function(){ lsDel(KEY_DRAFT); draftPending = false; $('#draftbar').hidden = true; baseline = snapStr(); });
+
+  /* startup */
+  if (!storageOK) {
+    $('#savesess').hidden = true; $('#sessbox').hidden = true; $('#sesssum').textContent = 'Session files';
+    $('#savestatus').textContent = 'This browser blocks saving, so work is lost on refresh. Use Copy or Export before you leave.';
+  } else {
+    var dr0 = lsGet(KEY_DRAFT);
+    if (dr0 && dr0.data && dr0.saved && (Date.now() - dr0.saved) < RETAIN_DAYS * DAY) {
+      draftPending = true; $('#draftbar').hidden = false;
+      $('#draftmsg').textContent = 'Unsaved session found (' + (dr0.data.code || 'no initials') + ', ' + fmtDate(dr0.data.visit) + '). Resume it, or discard it to start fresh.';
+    } else if (dr0) lsDel(KEY_DRAFT);
+    renderSessions();
+  }
+  syncInputs();
+  baseline = snapStr();
+
+  refresh();
+})();
+</script>
+</body>
+</html>
