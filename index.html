@@ -148,7 +148,7 @@
 <body>
 <main>
   <h1>Functional mobility test station</h1>
-  <p class="sub">Mobility, balance and endurance tests for older adults. Nothing is sent to a server. Sessions you save stay in this browser on this device.</p>
+  <p class="sub">Mobility, balance and endurance tests for older adults. No patient or test data is sent to a server. Sessions you save stay in this browser on this device. Anonymous usage counts (page views and which test tab is used) are collected with GoatCounter, which uses no cookies.</p>
   <p class="byline">Created by Kenneth L. Miller, PT, DPT, PhD, FNAP<br>Associate Professor, Department of Physical Therapy, MUSC College of Health Professions</p>
 
   <section class="card" id="draftbar" aria-label="Unsaved session found" hidden>
@@ -205,7 +205,7 @@
     <summary id="sesssum">Saved sessions (<span id="sesscount">0</span>)</summary>
     <div id="sessbox">
       <div id="sessions"></div>
-      <p class="foot">Kept in this browser on this device for 90 days after you last save, then deleted automatically. Nothing is sent to a server. Clearing your browser data also removes them. Change-since-last-visit comparisons use saved sessions with the same initials, the same sex and an age within 2 years.</p>
+      <p class="foot">Kept in this browser on this device for 90 days after you last save, then deleted automatically. No test data is sent to a server. Clearing your browser data also removes them. Change-since-last-visit comparisons use saved sessions with the same initials, the same sex and an age within 2 years.</p>
     </div>
     <h3 class="sumgrp" style="margin-top:14px">Session files (backup or move to another device)</h3>
     <div class="btns two"><button class="btn small ghost" id="filesave" type="button" hidden>Save session file</button><button class="btn small ghost" id="fileopen" type="button">Open session file</button></div>
@@ -250,7 +250,8 @@
     <p><strong>Created by Kenneth L. Miller, PT, DPT, PhD, FNAP</strong>, Associate Professor, Department of Physical Therapy, MUSC College of Health Professions.</p>
     <p>This tool is for educational use and to support the clinical judgment of licensed health professionals. It does not provide medical advice, diagnosis or treatment, and it does not replace professional judgment, the original instruments or your clinic&rsquo;s protocols.</p>
     <p>Protocols, scoring definitions, reference values and cut-offs are condensed from published sources and may be incomplete or out of date. Confirm them against the original instruments before relying on a result. The author and the Medical University of South Carolina are not responsible for decisions made using this tool.</p>
-    <p>Enter initials only. Do not enter names, birth dates or other identifying information. Nothing is sent to a server; saved sessions stay in your browser on your device.</p>
+    <p>Enter initials only. Do not enter names, birth dates or other identifying information. No patient or test data is sent to a server; saved sessions stay in your browser on your device.</p>
+    <p>Anonymous usage counts are collected with GoatCounter, a service that uses no cookies. They record only page views and which test tab was opened or used. They never include initials, results, notes or any other entry.</p>
   </section>
 </main>
 
@@ -2048,6 +2049,110 @@
   baseline = snapStr();
 
   refresh();
+})();
+</script>
+<script>
+/* ===== Usage counts (GoatCounter) =====
+   Counts how often each test tab is opened and used. Nothing entered, selected or recorded is sent.
+   Only these event names are ever sent, each once per page load:
+     functional-mobility-tests/tab/<test>/opened   a test tab was shown
+     functional-mobility-tests/tab/<test>/used     something was entered or tapped on that test's panel
+     functional-mobility-tests/used                the first use of any test panel
+   <test> is the short test key already built into the page (for example "tug").
+   A small line at the bottom of the page shows the public totals (Page views, Times used).
+   Set CODE to "" to turn counting off. Counting is skipped when the browser sends Do Not Track. */
+(function () {
+  var CODE = "KenMillerDPT";
+  var CALCULATOR = "functional-mobility-tests";
+
+  var dnt = navigator.doNotTrack === "1" || window.doNotTrack === "1";
+  if (!CODE) return;
+  var counting = !dnt;
+
+  var queue = [], seen = {};
+  function send(name) {
+    try { window.goatcounter.count({ path: name, title: name, event: true }); } catch (e) {}
+  }
+  function track(name) {
+    var ev = CALCULATOR + "/" + name;
+    if (!counting || seen[ev]) return;
+    seen[ev] = true;
+    if (window.goatcounter && typeof window.goatcounter.count === "function") send(ev);
+    else queue.push(ev);
+  }
+
+  var gc = document.createElement("script");
+  gc.async = true;
+  gc.src = "https://gc.zgo.at/count.js";
+  gc.setAttribute("data-goatcounter", "https://" + CODE + ".goatcounter.com/count");
+  gc.onload = function () { while (queue.length) send(queue.shift()); showTally(); };
+  if (counting) document.head.appendChild(gc); else showTally();
+
+  // Visible tally. Reads the public counts back from GoatCounter and shows them at the bottom of the page.
+  // A number is shown only when GoatCounter returns one, so the line stays hidden if the setting is off.
+  function readCount(path, done) {
+    try {
+      var x = new XMLHttpRequest();
+      x.open("GET", "https://" + CODE + ".goatcounter.com/counter/" + encodeURIComponent(path) + ".json");
+      x.onload = function () {
+        var n = null;
+        try { if (x.status === 200) n = parseInt(String(JSON.parse(x.responseText).count).replace(/[^0-9]/g, ""), 10); } catch (e) {}
+        done(n > 0 ? n : null);
+      };
+      x.onerror = function () { done(null); };
+      x.send();
+    } catch (e) { done(null); }
+  }
+  function showTally() {
+    var path = location.pathname;
+    try { if (window.goatcounter && window.goatcounter.get_data) path = window.goatcounter.get_data().p || path; } catch (e) {}
+    var views = null, uses = null, pending = 2;
+    function finish() {
+      if (--pending) return;
+      var parts = [];
+      if (views) parts.push("Page views: " + views.toLocaleString("en-US"));
+      if (uses) parts.push("Times used: " + uses.toLocaleString("en-US"));
+      if (!parts.length) return;
+      var box = document.createElement("p");
+      box.className = "ct-tally";
+      box.style.cssText = "margin:18px 0 6px;text-align:center;font-size:13px;opacity:.8";
+      box.textContent = parts.join("  \u00b7  ");
+      (document.querySelector("main") || document.body).appendChild(box);
+    }
+    readCount(path, function (n) { views = n; finish(); });
+    readCount(CALCULATOR + "/used", function (n) { uses = n; finish(); });
+  }
+
+  // Only plain test keys are allowed into an event name.
+  function key(el) {
+    var k = el && el.getAttribute ? el.getAttribute("data-k") : "";
+    return /^[a-z0-9_-]{1,30}$/i.test(k || "") ? k.toLowerCase() : "";
+  }
+  function activeKey() { return key(document.querySelector('#tabs .tab[aria-selected="true"]')); }
+
+  // Tab shown: the one open at load, then each tab the user taps.
+  var first = activeKey();
+  if (first) track("tab/" + first + "/opened");
+  var tabs = document.getElementById("tabs");
+  if (tabs) tabs.addEventListener("click", function (e) {
+    var b = e.target && e.target.closest ? e.target.closest(".tab") : null;
+    if (!b || b.disabled) return;
+    var k = key(b);
+    if (k) track("tab/" + k + "/opened");
+  }, true);
+
+  // Test panel used: capture phase, so it runs before the page changes the active tab.
+  var panel = document.getElementById("panel");
+  function onUse(e) {
+    if (e.type === "click") {
+      var t = e.target;
+      if (!t || !t.closest || !t.closest("button, [data-score], [data-gmode]")) return;
+    }
+    var k = activeKey();
+    track("used");
+    if (k) track("tab/" + k + "/used");
+  }
+  if (panel) ["click", "input", "change"].forEach(function (type) { panel.addEventListener(type, onUse, true); });
 })();
 </script>
 </body>
